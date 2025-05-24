@@ -64,7 +64,7 @@ function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3">
         <div className="flex items-center gap-3">
