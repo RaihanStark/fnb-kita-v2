@@ -74,3 +74,6 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 
 ## Mobile App Design
 - This is a mobile app (PWA) - ensure design should be like a native mobile app
+
+## Component Guidelines
+- Always use UI components from Shadcn rather than custom CSS or basic HTML tags
