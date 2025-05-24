@@ -54,13 +54,6 @@ export function ReimbursementList() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-4 pb-20">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Reimbursements</h1>
-          <Button onClick={() => router.push("/reimbursements/new")}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Request
-          </Button>
-        </div>
         
         <Card className="p-6">
           <div className="text-center">
@@ -79,17 +72,6 @@ export function ReimbursementList() {
 
   return (
     <div className="p-4 pb-20">
-      {/* Material Design Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-medium text-gray-900">Reimbursements</h1>
-        <Button 
-          onClick={() => router.push("/reimbursements/new")}
-          className="bg-orange-600 hover:bg-orange-700 shadow-md"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Request
-        </Button>
-      </div>
 
       {role === "Manager" && <ReimbursementStats />}
       

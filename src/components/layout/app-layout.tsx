@@ -4,11 +4,9 @@ import { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { UserRole } from '@/lib/firebase/auth-service'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { LogoutButton } from '@/components/auth/logout-button'
 import { BottomNavigation } from '@/components/ui/bottom-navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import useAuthStore from '@/stores/auth-store'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -17,6 +15,7 @@ interface AppLayoutProps {
   hideBottomNav?: boolean
   showBackButton?: boolean
   onBackClick?: () => void
+  trailingActions?: ReactNode
 }
 
 export function AppLayout({ 
@@ -25,11 +24,10 @@ export function AppLayout({
   title = "FnB Kita",
   hideBottomNav = false,
   showBackButton = false,
-  onBackClick 
+  onBackClick,
+  trailingActions
 }: AppLayoutProps) {
   const router = useRouter()
-  const user = useAuthStore((state) => state.user)
-  const role = useAuthStore((state) => state.role)
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -42,23 +40,30 @@ export function AppLayout({
   return (
     <ProtectedRoute allowedRoles={allowedRoles}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Material Design AppBar with optional back navigation */}
-        <header className="bg-white shadow-sm sticky top-0 z-50">
+        {/* Material Design 3 Top App Bar */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            {/* Leading section */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               {showBackButton && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBackClick}
-                  className="hover:bg-gray-100 rounded-full p-2"
+                  className="hover:bg-gray-100 rounded-full p-2 shrink-0"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-6 w-6" />
                 </Button>
               )}
-              <h1 className="text-xl font-medium text-gray-900">{title}</h1>
+              <h1 className="text-xl font-medium text-gray-900 truncate">{title}</h1>
             </div>
-            <LogoutButton variant="ghost" size="sm" showIcon={false} />
+            
+            {/* Trailing actions section */}
+            {trailingActions && (
+              <div className="flex items-center gap-2 shrink-0">
+                {trailingActions}
+              </div>
+            )}
           </div>
         </header>
 
@@ -67,7 +72,7 @@ export function AppLayout({
           {children}
         </main>
 
-        {/* Material Design Bottom Navigation */}
+        {/* Bottom Navigation */}
         {!hideBottomNav && <BottomNavigation />}
       </div>
     </ProtectedRoute>

@@ -3,6 +3,7 @@
 import useAuthStore from '@/stores/auth-store'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ChangePasswordForm } from '@/components/auth/change-password-form'
+import { LogoutButton } from '@/components/auth/logout-button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
@@ -66,7 +67,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout
+      trailingActions={
+        <LogoutButton variant="ghost" size="sm" showIcon={false} />
+      }
+    >
       {/* Material Design User Info Card */}
       <div className="p-4">
         <Card className="shadow-md bg-gradient-to-r from-orange-500 to-orange-600 border-0">
