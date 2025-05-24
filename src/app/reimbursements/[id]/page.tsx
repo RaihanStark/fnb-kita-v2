@@ -9,7 +9,7 @@ export default function ReimbursementDetailPage({
   params: { id: string };
 }) {
   return (
-    <AppLayout title="Reimbursement Details">
+    <AppLayout title="Reimbursement Details" showBackButton={true}>
       <ReimbursementDetails reimbursementId={params.id} />
     </AppLayout>
   );

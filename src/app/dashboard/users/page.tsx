@@ -65,23 +65,14 @@ function UsersPage() {
   };
 
   return (
-    <AppLayout title="User Management" allowedRoles={['Manager']}>
+    <AppLayout 
+      title="User Management" 
+      allowedRoles={['Manager']}
+      showBackButton={true}
+    >
       <div className="flex flex-col h-full">
-        {/* Material Design Back Button */}
-        <div className="p-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-        </div>
-
         {/* Material Design Search and Filter */}
-        <div className="px-4 pb-4">
+        <div className="p-4">
           <Card className="shadow-md border-0">
             <div className="p-4">
               <div className="flex gap-3">

@@ -130,19 +130,6 @@ export function ReimbursementForm() {
 
   return (
     <div className="p-4 pb-20">
-      {/* Material Design Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="hover:bg-gray-100 rounded-full"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-medium text-gray-900">New Reimbursement</h1>
-      </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Material Design Form Fields */}
