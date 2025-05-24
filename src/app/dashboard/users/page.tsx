@@ -1,18 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { withRole } from '@/components/auth/with-role';
 import { useUserManagementStore } from '@/stores/user-management-store';
 import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Filter, ChevronDown, Users } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Search, ChevronDown, Users } from 'lucide-react';
 import { RoleChangeDialog } from '@/components/user-management/role-change-dialog';
 
 function UsersPage() {
-  const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const {
     users,
@@ -91,7 +89,7 @@ function UsersPage() {
           <div className="relative">
             <select
               value={filters.role}
-              onChange={(e) => handleRoleFilterChange(e.target.value as any)}
+              onChange={(e) => handleRoleFilterChange(e.target.value as '' | 'Manager' | 'Employee')}
               className="appearance-none bg-gray-50 border border-gray-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="">All Roles</option>

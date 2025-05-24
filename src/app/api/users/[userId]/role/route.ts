@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { admin } from '@/lib/firebase/admin';
-import { getAuth } from 'firebase-admin/auth';
+import { adminAuth } from '@/lib/firebase/admin';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
+  const { userId } = await params;
   try {
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
@@ -16,14 +16,14 @@ export async function PATCH(
     const token = authHeader.split('Bearer ')[1];
     
     // Verify the token and check if user is a Manager
-    const decodedToken = await getAuth(admin).verifyIdToken(token);
+    const decodedToken = await adminAuth.verifyIdToken(token);
     
     if (decodedToken.role !== 'Manager') {
       return NextResponse.json({ error: 'Forbidden: Manager access required' }, { status: 403 });
     }
 
     // Prevent managers from changing their own role
-    if (decodedToken.uid === params.userId) {
+    if (decodedToken.uid === userId) {
       return NextResponse.json({ error: 'Managers cannot change their own role' }, { status: 400 });
     }
 
@@ -37,9 +37,9 @@ export async function PATCH(
 
     // Check if this would remove the last manager
     if (role === 'Employee') {
-      const listUsersResult = await getAuth(admin).listUsers(1000);
+      const listUsersResult = await adminAuth.listUsers(1000);
       const managers = listUsersResult.users.filter(
-        user => user.customClaims?.role === 'Manager' && user.uid !== params.userId
+        user => user.customClaims?.role === 'Manager' && user.uid !== userId
       );
 
       if (managers.length === 0) {
@@ -51,10 +51,10 @@ export async function PATCH(
     }
 
     // Update the user's custom claims
-    await getAuth(admin).setCustomUserClaims(params.userId, { role });
+    await adminAuth.setCustomUserClaims(userId, { role });
 
     // Get updated user data
-    const updatedUser = await getAuth(admin).getUser(params.userId);
+    const updatedUser = await adminAuth.getUser(userId);
 
     return NextResponse.json({
       success: true,

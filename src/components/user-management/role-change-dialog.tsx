@@ -84,7 +84,7 @@ export function RoleChangeDialog() {
 
         <div className="p-4">
           <p className="text-gray-600 mb-4">
-            Are you sure you want to change <strong>{selectedUser.email}</strong>'s role from{' '}
+            Are you sure you want to change <strong>{selectedUser.email}</strong>&apos;s role from{' '}
             <strong>{selectedUser.role}</strong> to <strong>{newRole}</strong>?
           </p>
 
