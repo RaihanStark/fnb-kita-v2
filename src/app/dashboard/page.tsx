@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { ChangePasswordForm } from '@/components/auth/change-password-form'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { 
   User, 
@@ -45,12 +46,13 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <header className="bg-white border-b border-gray-200 sticky top-0 z-10 safe-top">
             <div className="px-4 py-3 flex items-center justify-between">
-              <button 
+              <Button 
                 onClick={() => setShowChangePassword(false)}
+                variant="ghost"
                 className="text-gray-700 font-medium"
               >
                 Cancel
-              </button>
+              </Button>
               <h1 className="text-lg font-semibold">Change Password</h1>
               <div className="w-16" />
             </div>
@@ -106,15 +108,16 @@ export default function DashboardPage() {
             {features.map((feature, index) => {
               const Icon = feature.icon
               return (
-                <button
+                <Button
                   key={index}
-                  className="bg-white rounded-2xl p-4 border-2 border-gray-200 text-left hover:border-orange-300 transition-colors active:scale-95"
+                  variant="outline"
+                  className="h-auto flex-col items-start justify-start bg-white rounded-2xl p-4 border-2 border-gray-200 text-left hover:border-orange-300 hover:bg-transparent transition-colors active:scale-95"
                 >
                   <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-3`}>
                     <Icon className="w-6 h-6" />
                   </div>
                   <p className="font-medium text-gray-900">{feature.label}</p>
-                </button>
+                </Button>
               )
             })}
           </div>
@@ -124,9 +127,10 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h2>
             <Card className="border-2 border-gray-200">
               <CardContent className="p-0">
-                <button
+                <Button
                   onClick={() => setShowChangePassword(true)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                  variant="ghost"
+                  className="w-full h-auto flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-none"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -138,7 +142,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
-                </button>
+                </Button>
               </CardContent>
             </Card>
           </div>
