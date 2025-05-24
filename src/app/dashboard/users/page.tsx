@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { withRole } from '@/components/auth/with-role';
+import { AppLayout } from '@/components/layout/app-layout';
 import { useUserManagementStore } from '@/stores/user-management-store';
 import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
@@ -64,55 +65,51 @@ function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-3">
-        <div className="flex items-center gap-3">
+    <AppLayout title="User Management" allowedRoles={['Manager']}>
+      <div className="flex flex-col h-full">
+        {/* Back Button */}
+        <div className="px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-gray-100"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Button>
-          <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            User Management
-          </h1>
         </div>
-      </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              type="text"
-              placeholder="Search users..."
-              value={filters.search}
-              onChange={handleSearchChange}
-              className="pl-9 bg-gray-50 border-gray-200"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={filters.role}
-              onChange={(e) => handleRoleFilterChange(e.target.value as '' | 'Manager' | 'Employee')}
-              className="appearance-none bg-gray-50 border border-gray-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="">All Roles</option>
-              <option value="Manager">Manager</option>
-              <option value="Employee">Employee</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+        {/* Search and Filter Bar */}
+        <div className="bg-white px-4 py-3 border-b">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search users..."
+                value={filters.search}
+                onChange={handleSearchChange}
+                className="pl-9 bg-gray-50 border-gray-200"
+              />
+            </div>
+            <div className="relative">
+              <select
+                value={filters.role}
+                onChange={(e) => handleRoleFilterChange(e.target.value as '' | 'Manager' | 'Employee')}
+                className="appearance-none bg-gray-50 border border-gray-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">All Roles</option>
+                <option value="Manager">Manager</option>
+                <option value="Employee">Employee</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* User List */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+        {/* User List */}
+        <div className="flex-1 overflow-y-auto px-4 py-3">
         {loading && (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -200,11 +197,12 @@ function UsersPage() {
             </Button>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Role Change Dialog */}
-      <RoleChangeDialog />
-    </div>
+        {/* Role Change Dialog */}
+        <RoleChangeDialog />
+      </div>
+    </AppLayout>
   );
 }
 
