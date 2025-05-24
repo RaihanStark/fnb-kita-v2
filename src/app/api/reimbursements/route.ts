@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
     const userRole = decodedToken.role || 'Employee';
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const lastDocId = searchParams.get('lastDocId');
 
     // Build query
-    const query = adminDb.collection('reimbursements');
+    const query = getAdminDb().collection('reimbursements');
     let queryRef = query as any;
 
     // Filter by user for employees
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     queryRef = queryRef.orderBy('submittedDate', 'desc').limit(pageSize + 1);
 
     if (lastDocId) {
-      const lastDoc = await adminDb.collection('reimbursements').doc(lastDocId).get();
+      const lastDoc = await getAdminDb().collection('reimbursements').doc(lastDocId).get();
       if (lastDoc.exists) {
         queryRef = queryRef.startAfter(lastDoc);
       }
@@ -104,11 +104,11 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
 
     // Get user info
-    const userRecord = await adminAuth.getUser(userId);
+    const userRecord = await getAdminAuth().getUser(userId);
     const userName = userRecord.displayName || userRecord.email?.split('@')[0] || 'Unknown';
     const userEmail = userRecord.email || '';
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create reimbursement
-    const docRef = await adminDb.collection('reimbursements').add({
+    const docRef = await getAdminDb().collection('reimbursements').add({
       employeeId: userId,
       employeeName: userName,
       employeeEmail: userEmail,
