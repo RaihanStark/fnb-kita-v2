@@ -22,9 +22,9 @@ export function BottomNavigation() {
   const router = useRouter()
 
   return (
-    <div className="fixed bottom-6 left-6 right-6 z-50 safe-bottom">
-      <nav className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-1">
-        <div className="grid grid-cols-2 gap-1">
+    <div className="fixed bottom-0 left-0 right-0 z-50">
+      <nav className="bg-white border-t border-gray-200">
+        <div className="flex items-center justify-around h-16 px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = pathname.startsWith(tab.href)
@@ -34,27 +34,30 @@ export function BottomNavigation() {
                 key={tab.href}
                 onClick={() => router.push(tab.href)}
                 className={cn(
-                  "flex flex-col items-center justify-center py-4 px-6 rounded-3xl transition-all duration-200",
-                  "focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:ring-offset-2",
-                  isActive 
-                    ? "bg-orange-600 text-white shadow-lg scale-105" 
-                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                  "flex flex-col items-center justify-center py-2 px-3 relative transition-all duration-200 min-w-0",
+                  "focus:outline-none"
                 )}
               >
-                <Icon 
-                  className={cn(
-                    "w-5 h-5 mb-2 transition-all duration-200",
-                    isActive ? "text-white" : "text-gray-400"
-                  )}
-                />
-                <span 
-                  className={cn(
-                    "text-xs font-semibold tracking-wide transition-all duration-200",
-                    isActive ? "text-white" : "text-gray-400"
-                  )}
-                >
-                  {tab.name}
-                </span>
+                <div className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-1 rounded-full transition-all duration-200",
+                  isActive ? "bg-orange-100" : "hover:bg-gray-50"
+                )}>
+                  <Icon 
+                    className={cn(
+                      "w-6 h-6 transition-all duration-200",
+                      isActive ? "text-orange-600" : "text-gray-600"
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  <span 
+                    className={cn(
+                      "text-xs font-medium transition-all duration-200 whitespace-nowrap",
+                      isActive ? "text-orange-600" : "text-gray-600"
+                    )}
+                  >
+                    {tab.name}
+                  </span>
+                </div>
               </button>
             )
           })}
