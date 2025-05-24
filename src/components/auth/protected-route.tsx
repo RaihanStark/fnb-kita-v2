@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { UserRole } from '@/lib/firebase/auth-service'
 import { Loader2 } from 'lucide-react'
 
@@ -17,7 +17,9 @@ export function ProtectedRoute({
   allowedRoles,
   redirectTo = '/login' 
 }: ProtectedRouteProps) {
-  const { user, role, loading } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const role = useAuthStore((state) => state.role)
+  const loading = useAuthStore((state) => state.loading)
   const router = useRouter()
 
   useEffect(() => {

@@ -2,12 +2,13 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { Loader2 } from 'lucide-react'
 
 export default function Home() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const loading = useAuthStore((state) => state.loading)
 
   useEffect(() => {
     if (!loading) {

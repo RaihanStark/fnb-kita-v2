@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { LogOut, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -22,7 +22,7 @@ export function LogoutButton({
   redirectTo = "/login"
 }: LogoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const { signOut } = useAuth()
+  const signOut = useAuthStore((state) => state.signOut)
   const router = useRouter()
 
   const handleLogout = async () => {

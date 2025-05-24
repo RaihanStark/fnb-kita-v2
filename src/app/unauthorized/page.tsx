@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ShieldX } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 
 export default function UnauthorizedPage() {
   const router = useRouter()
-  const { signOut } = useAuth()
+  const signOut = useAuthStore((state) => state.signOut)
 
   const handleGoBack = () => {
     router.back()

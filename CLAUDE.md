@@ -78,6 +78,10 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 ## Component Guidelines
 - Always use UI components from Shadcn rather than custom CSS or basic HTML tags
 
+## State Management
+- Always use Zustand for state management, never React Context
+- Store files should be placed in `/src/stores/`
+
 ## Test API Endpoints (Development Only)
 - **Set User Role**: `POST /api/test-set-role?email=user@example.com&role=Manager`
   - Available roles: Manager, Employee

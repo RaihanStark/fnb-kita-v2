@@ -3,7 +3,7 @@
 import { ReactNode } from 'react'
 import { UserRole } from '@/lib/firebase/auth-service'
 import { ProtectedRoute } from './protected-route'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { LogoutButton } from './logout-button'
 import { User, Briefcase } from 'lucide-react'
 
@@ -13,7 +13,8 @@ interface ProtectedLayoutProps {
 }
 
 export function ProtectedLayout({ children, allowedRoles }: ProtectedLayoutProps) {
-  const { user, role } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const role = useAuthStore((state) => state.role)
 
   return (
     <ProtectedRoute allowedRoles={allowedRoles}>

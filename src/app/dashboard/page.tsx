@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { ChangePasswordForm } from '@/components/auth/change-password-form'
@@ -20,7 +20,8 @@ import {
 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { user, role } = useAuth()
+  const user = useAuthStore((state) => state.user)
+  const role = useAuthStore((state) => state.role)
   const [showChangePassword, setShowChangePassword] = useState(false)
 
   const managerFeatures = [

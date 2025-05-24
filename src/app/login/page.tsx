@@ -1,14 +1,14 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import useAuthStore from '@/stores/auth-store'
 import { LoginForm } from '@/components/auth/login-form'
 import { useEffect } from 'react'
 import { Utensils } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
     if (user) {
