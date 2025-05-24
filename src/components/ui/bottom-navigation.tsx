@@ -22,8 +22,8 @@ export function BottomNavigation() {
   const router = useRouter()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 safe-bottom z-50">
-      <div className="grid grid-cols-2 h-16">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200/50 safe-bottom z-50">
+      <div className="grid grid-cols-2 h-20 px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = pathname.startsWith(tab.href)
@@ -33,26 +33,23 @@ export function BottomNavigation() {
               key={tab.href}
               onClick={() => router.push(tab.href)}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 relative transition-all duration-200",
-                "hover:bg-orange-50 active:scale-95",
-                isActive && "bg-orange-50"
+                "flex flex-col items-center justify-center py-3 px-4 m-1 rounded-2xl transition-all duration-300 ease-out",
+                "focus:outline-none focus:ring-2 focus:ring-orange-500/20",
+                isActive 
+                  ? "bg-orange-500 text-white shadow-lg" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               )}
             >
-              {/* Material Design Active Indicator */}
-              {isActive && (
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-orange-600 rounded-full" />
-              )}
-              
               <Icon 
                 className={cn(
-                  "w-6 h-6 mb-1 transition-colors",
-                  isActive ? "text-orange-600" : "text-gray-600"
+                  "w-6 h-6 mb-1 transition-all duration-300",
+                  isActive && "drop-shadow-sm"
                 )}
               />
               <span 
                 className={cn(
-                  "text-xs font-medium transition-colors",
-                  isActive ? "text-orange-600" : "text-gray-600"
+                  "text-xs font-medium transition-all duration-300",
+                  isActive ? "text-white" : "text-gray-500"
                 )}
               >
                 {tab.name}
