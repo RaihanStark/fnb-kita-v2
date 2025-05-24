@@ -124,7 +124,7 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
 
 // Helper function to get the ID token (will be imported from auth store)
 async function getIdToken(): Promise<string> {
-  const { default: authStore } = await import('./auth-store');
+  const authStore = (await import('./auth-store')).default;
   const user = authStore.getState().user;
   if (!user) throw new Error('No user logged in');
   return user.getIdToken();

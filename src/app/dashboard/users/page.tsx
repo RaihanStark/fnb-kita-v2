@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { withRole } from '@/components/auth/with-role';
 import { useUserManagementStore } from '@/stores/user-management-store';
-import { useAuthStore } from '@/stores/auth-store';
+import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

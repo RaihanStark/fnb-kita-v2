@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUserManagementStore } from '@/stores/user-management-store';
-import { useAuthStore } from '@/stores/auth-store';
+import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
