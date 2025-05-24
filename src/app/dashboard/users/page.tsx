@@ -132,9 +132,9 @@ function UsersPage() {
         )}
 
         {!loading && !error && users.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3" role="list">
             {users.map((user) => (
-              <Card key={user.uid} className="bg-white">
+              <Card key={user.uid} className="bg-white" role="listitem">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

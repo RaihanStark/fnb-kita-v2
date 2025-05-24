@@ -35,3 +35,22 @@ export async function setUserRole(email: string, role: 'Manager' | 'Employee') {
   
   return await response.json();
 }
+
+export async function setupTestUsers(page: Page, options?: { createExtraManager?: boolean }) {
+  // Set up default test users
+  await setUserRole('manager@test.com', 'Manager');
+  await setUserRole('employee@test.com', 'Employee');
+  await setUserRole('employee2@test.com', 'Employee');
+  
+  if (options?.createExtraManager) {
+    await setUserRole('manager2@test.com', 'Manager');
+  }
+}
+
+export async function loginAsManager(page: Page) {
+  await login(page, 'manager@test.com', 'password123');
+}
+
+export async function loginAsEmployee(page: Page) {
+  await login(page, 'employee@test.com', 'password123');
+}
