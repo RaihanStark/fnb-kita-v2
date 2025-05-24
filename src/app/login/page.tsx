@@ -28,7 +28,7 @@ export default function LoginPage() {
       
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="mb-8 text-center">
-          <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-600">
             <Utensils className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">FnB Kita</h1>

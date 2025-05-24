@@ -72,7 +72,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
   }
 
   return (
-    <Card className="w-full border-0 shadow-lg">
+    <Card className="w-full border border-gray-200">
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -122,7 +122,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
             )}
             <Button 
               type="submit" 
-              className="w-full h-12 text-base font-semibold rounded-xl shadow-md hover:shadow-lg transition-shadow" 
+              className="w-full h-12 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90" 
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}

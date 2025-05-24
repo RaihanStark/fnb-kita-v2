@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
         {/* User Info Card */}
         <div className="px-4 pt-4">
-          <Card className="border-0 shadow-sm bg-gradient-to-r from-orange-500 to-orange-600">
+          <Card className="border border-orange-600 bg-gradient-to-r from-orange-500 to-orange-600">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
@@ -108,7 +108,7 @@ export default function DashboardPage() {
               return (
                 <button
                   key={index}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-left hover:shadow-md transition-shadow active:scale-95"
+                  className="bg-white rounded-2xl p-4 border-2 border-gray-200 text-left hover:border-orange-300 transition-colors active:scale-95"
                 >
                   <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-3`}>
                     <Icon className="w-6 h-6" />
@@ -122,7 +122,7 @@ export default function DashboardPage() {
           {/* Settings Section */}
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h2>
-            <Card className="border-0 shadow-sm">
+            <Card className="border-2 border-gray-200">
               <CardContent className="p-0">
                 <button
                   onClick={() => setShowChangePassword(true)}
