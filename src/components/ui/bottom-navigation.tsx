@@ -38,10 +38,7 @@ export function BottomNavigation() {
                   "focus:outline-none"
                 )}
               >
-                <div className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-1 transition-all duration-200",
-                  isActive ? "bg-orange-100" : "hover:bg-gray-50"
-                )}>
+                <div className="flex flex-col items-center gap-1 px-3 py-1 transition-all duration-200">
                   <Icon 
                     className={cn(
                       "w-6 h-6 transition-all duration-200",
