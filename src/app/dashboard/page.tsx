@@ -7,6 +7,7 @@ import { ChangePasswordForm } from '@/components/auth/change-password-form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   User, 
   ChefHat, 
@@ -22,10 +23,11 @@ import {
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user)
   const role = useAuthStore((state) => state.role)
+  const router = useRouter()
   const [showChangePassword, setShowChangePassword] = useState(false)
 
   const managerFeatures = [
-    { icon: Users, label: 'User Management', color: 'bg-blue-100 text-blue-600' },
+    { icon: Users, label: 'User Management', color: 'bg-blue-100 text-blue-600', href: '/dashboard/users' },
     { icon: FileText, label: 'Reports', color: 'bg-green-100 text-green-600' },
     { icon: Package, label: 'Inventory', color: 'bg-purple-100 text-purple-600' },
     { icon: ChefHat, label: 'Menu Items', color: 'bg-orange-100 text-orange-600' },
@@ -111,6 +113,7 @@ export default function DashboardPage() {
                 <Button
                   key={index}
                   variant="outline"
+                  onClick={() => feature.href && router.push(feature.href)}
                   className="h-auto flex-col items-start justify-start bg-white rounded-2xl p-4 border-2 border-gray-200 text-left hover:border-orange-300 hover:bg-transparent transition-colors active:scale-95"
                 >
                   <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-3`}>
