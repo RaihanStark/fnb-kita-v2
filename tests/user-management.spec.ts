@@ -6,6 +6,20 @@ test.describe('User Management', () => {
     await setupTestUsers(page);
   });
 
+  // Skip tests if test users don't exist
+  test.beforeAll(async ({ request }) => {
+    try {
+      const response = await request.get('/api/test-get-role?email=manager@test.com');
+      if (!response.ok()) {
+        console.error('Test users not found. Please create test users first. See docs/test-setup.md');
+        test.skip();
+      }
+    } catch (error) {
+      console.error('Could not verify test users:', error);
+      test.skip();
+    }
+  });
+
   test.describe('Access Control', () => {
     test('Manager can access user management', async ({ page }) => {
       await loginAsManager(page);

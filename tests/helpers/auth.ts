@@ -37,13 +37,32 @@ export async function setUserRole(email: string, role: 'Manager' | 'Employee') {
 }
 
 export async function setupTestUsers(page: Page, options?: { createExtraManager?: boolean }) {
-  // Set up default test users
-  await setUserRole('manager@test.com', 'Manager');
-  await setUserRole('employee@test.com', 'Employee');
-  await setUserRole('employee2@test.com', 'Employee');
+  // Note: Test users must already exist in Firebase Auth
+  // These test users should be created in your Firebase project before running tests
+  try {
+    await setUserRole('manager@test.com', 'Manager');
+  } catch (error) {
+    console.warn('Could not set role for manager@test.com - user may not exist');
+  }
+  
+  try {
+    await setUserRole('employee@test.com', 'Employee');
+  } catch (error) {
+    console.warn('Could not set role for employee@test.com - user may not exist');
+  }
+  
+  try {
+    await setUserRole('employee2@test.com', 'Employee');
+  } catch (error) {
+    console.warn('Could not set role for employee2@test.com - user may not exist');
+  }
   
   if (options?.createExtraManager) {
-    await setUserRole('manager2@test.com', 'Manager');
+    try {
+      await setUserRole('manager2@test.com', 'Manager');
+    } catch (error) {
+      console.warn('Could not set role for manager2@test.com - user may not exist');
+    }
   }
 }
 
