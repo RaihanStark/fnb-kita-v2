@@ -67,11 +67,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppLayout
-      trailingActions={
-        <LogoutButton variant="ghost" size="sm" showIcon={false} />
-      }
-    >
+    <AppLayout>
       {/* Material Design User Info Card */}
       <div className="p-4">
         <Card className="shadow-md bg-gradient-to-r from-orange-500 to-orange-600 border-0">

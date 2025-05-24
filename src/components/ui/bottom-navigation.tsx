@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, DollarSign } from 'lucide-react'
+import { Home, DollarSign, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -14,6 +14,11 @@ const tabs = [
     name: 'Reimbursements',
     href: '/reimbursements',
     icon: DollarSign,
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
   },
 ]
 
