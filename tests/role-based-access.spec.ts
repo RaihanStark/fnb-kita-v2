@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { login, setUserRole } from './helpers/auth';
 
-const MANAGER_EMAIL = 'raihanstark53@gmail.com';
-const MANAGER_PASSWORD = 'raihan';
+const MANAGER_EMAIL = 'manager@test.com';
+const MANAGER_PASSWORD = 'password123';
 
 // Note: For these tests to work, you need to create an employee user in Firebase Console
 // or have a test employee account ready
-const EMPLOYEE_EMAIL = 'employee@example.com';
-const EMPLOYEE_PASSWORD = 'employee123';
+const EMPLOYEE_EMAIL = 'employee@test.com';
+const EMPLOYEE_PASSWORD = 'password123';
 
 test.describe('Role-based Access Control', () => {
   test.beforeAll(async () => {
@@ -47,7 +47,7 @@ test.describe('Role-based Access Control', () => {
     await page.click('button[type="submit"]');
     
     // Wait for dashboard
-    await page.waitForURL('/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 10000 });
     
     // Check role display in the user info card
     await expect(page.locator('text=Manager').first()).toBeVisible();
@@ -76,7 +76,7 @@ test.describe('Role-based Access Control', () => {
   });
 
   // Note: This test requires an employee account to be created
-  test.skip('Employee sees employee-specific features', async ({ page }) => {
+  test('Employee sees employee-specific features', async ({ page }) => {
     // This test is skipped by default as it requires an employee account
     // Remove .skip and ensure EMPLOYEE_EMAIL account exists to run this test
     
@@ -87,13 +87,13 @@ test.describe('Role-based Access Control', () => {
     await login(page, EMPLOYEE_EMAIL, EMPLOYEE_PASSWORD);
     
     // Should see Employee role badge
-    await expect(page.locator('span:has-text("Employee")')).toBeVisible();
+    await expect(page.locator('text=Employee').first()).toBeVisible();
     
     // Should see employee-specific features
     await expect(page.locator('text=Clock In/Out')).toBeVisible();
     await expect(page.locator('text=Orders')).toBeVisible();
     await expect(page.locator('text=Profile')).toBeVisible();
-    await expect(page.locator('text=Settings')).toBeVisible();
+    await expect(page.locator('p:has-text("Settings")')).toBeVisible();
     
     // Should NOT see manager-specific features
     await expect(page.locator('text=User Management')).not.toBeVisible();

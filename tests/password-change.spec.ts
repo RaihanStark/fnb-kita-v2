@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { login } from './helpers/auth';
 
-const MANAGER_EMAIL = 'raihanstark53@gmail.com';
-const MANAGER_PASSWORD = 'raihan';
+const MANAGER_EMAIL = 'manager@test.com';
+const MANAGER_PASSWORD = 'password123';
 const NEW_PASSWORD = 'newpassword123';
 
 test.describe('Password Change Flow', () => {

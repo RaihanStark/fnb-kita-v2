@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { login, logout } from './helpers/auth';
 
-const MANAGER_EMAIL = 'raihanstark53@gmail.com';
-const MANAGER_PASSWORD = 'raihan';
+const MANAGER_EMAIL = 'manager@test.com';
+const MANAGER_PASSWORD = 'password123';
 
 test.describe('Authentication Flow', () => {
   test('should successfully login with valid credentials', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('Authentication Flow', () => {
     await page.click('button[type="submit"]');
     
     // Wait for navigation to dashboard
-    await page.waitForURL('/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 10000 });
     
     // Verify we're logged in
     await expect(page.locator('text=' + MANAGER_EMAIL)).toBeVisible();

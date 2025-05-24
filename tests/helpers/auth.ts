@@ -12,7 +12,7 @@ export async function login(page: Page, email: string, password: string) {
   await page.click('button[type="submit"]');
   
   // Wait for navigation to dashboard
-  await page.waitForURL('/dashboard', { timeout: 10000 });
+  await page.waitForURL('**/dashboard', { timeout: 10000 });
   await page.waitForLoadState('networkidle');
 }
 
@@ -21,11 +21,11 @@ export async function logout(page: Page) {
   await page.click('button:has-text("Logout")');
   
   // Wait for navigation to login page
-  await page.waitForURL('/login', { timeout: 5000 });
+  await page.waitForURL('**/login', { timeout: 5000 });
 }
 
 export async function setUserRole(email: string, role: 'Manager' | 'Employee') {
-  const response = await fetch(`http://localhost:3001/api/test-set-role?email=${email}&role=${role}`, {
+  const response = await fetch(`http://localhost:3000/api/test-set-role?email=${email}&role=${role}`, {
     method: 'POST'
   });
   
