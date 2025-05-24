@@ -6,6 +6,7 @@ import { LogoutButton } from '@/components/auth/logout-button'
 import { ChangePasswordForm } from '@/components/auth/change-password-form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { BottomNavigation } from '@/components/ui/bottom-navigation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
@@ -17,7 +18,8 @@ import {
   Clock,
   Settings,
   ChevronRight,
-  Lock
+  Lock,
+  DollarSign
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -28,15 +30,15 @@ export default function DashboardPage() {
 
   const managerFeatures = [
     { icon: Users, label: 'User Management', color: 'bg-blue-100 text-blue-600', href: '/dashboard/users' },
-    { icon: FileText, label: 'Reports', color: 'bg-green-100 text-green-600', href: '' },
-    { icon: Package, label: 'Inventory', color: 'bg-purple-100 text-purple-600', href: '' },
-    { icon: ChefHat, label: 'Menu Items', color: 'bg-orange-100 text-orange-600', href: '' },
+    { icon: DollarSign, label: 'Reimbursements', color: 'bg-green-100 text-green-600', href: '/reimbursements' },
+    { icon: FileText, label: 'Reports', color: 'bg-purple-100 text-purple-600', href: '' },
+    { icon: Package, label: 'Inventory', color: 'bg-orange-100 text-orange-600', href: '' },
   ]
 
   const employeeFeatures = [
     { icon: Clock, label: 'Clock In/Out', color: 'bg-blue-100 text-blue-600', href: '' },
-    { icon: Package, label: 'Orders', color: 'bg-green-100 text-green-600', href: '' },
-    { icon: User, label: 'Profile', color: 'bg-purple-100 text-purple-600', href: '' },
+    { icon: DollarSign, label: 'Reimbursements', color: 'bg-green-100 text-green-600', href: '/reimbursements' },
+    { icon: Package, label: 'Orders', color: 'bg-purple-100 text-purple-600', href: '' },
     { icon: Settings, label: 'Settings', color: 'bg-orange-100 text-orange-600', href: '' },
   ]
 
@@ -151,8 +153,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Bottom Safe Area */}
-        <div className="safe-bottom" />
+        {/* Bottom Safe Area + Navigation Space */}
+        <div className="h-16 safe-bottom" />
+        
+        {/* Bottom Navigation */}
+        <BottomNavigation />
       </div>
     </ProtectedRoute>
   )

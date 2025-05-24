@@ -71,12 +71,14 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 
 ## Commit Guidelines
 - When doing commit, do not add any AI credit
+- After each task completed, always commit
 
 ## Mobile App Design
 - This is a mobile app (PWA) - ensure design should be like a native mobile app
 
 ## Component Guidelines
 - Always use UI components from Shadcn rather than custom CSS or basic HTML tags
+- Don't manually create a Shadcn UI component, just use `npx shadcn@latest add button` for example
 
 ## State Management
 - Always use Zustand for state management, never React Context
