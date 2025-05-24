@@ -39,7 +39,7 @@ export function BottomNavigation() {
                 )}
               >
                 <div className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-1 rounded-full transition-all duration-200",
+                  "flex flex-col items-center gap-1 px-3 py-1 transition-all duration-200",
                   isActive ? "bg-orange-100" : "hover:bg-gray-50"
                 )}>
                   <Icon 
