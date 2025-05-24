@@ -20,9 +20,6 @@ import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 
 const changePasswordSchema = z.object({
@@ -75,26 +72,21 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Change Password</CardTitle>
-        <CardDescription>
-          Enter your new password below
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full border-0 shadow-lg">
+      <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">New Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Enter new password"
+                      className="h-12 text-base rounded-xl border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -107,11 +99,12 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Confirm new password"
+                      className="h-12 text-base rounded-xl border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -120,16 +113,20 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
               )}
             />
             {error && (
-              <div className="text-sm text-destructive">{error}</div>
+              <div className="text-sm text-destructive bg-red-50 p-3 rounded-lg">{error}</div>
             )}
             {success && (
-              <div className="text-sm text-green-600">
+              <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
                 Password changed successfully!
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Change Password
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-semibold rounded-xl shadow-md hover:shadow-lg transition-shadow" 
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              Update Password
             </Button>
           </form>
         </Form>

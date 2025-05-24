@@ -71,3 +71,6 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 
 ## Commit Guidelines
 - When doing commit, do not add any AI credit
+
+## Mobile App Design
+- This is a mobile app (PWA) - ensure design should be like a native mobile app

@@ -20,9 +20,6 @@ import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 
 const loginSchema = z.object({
@@ -68,26 +65,21 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full border-0 shadow-xl">
+      <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="email@example.com"
+                      className="h-12 text-base rounded-xl border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -100,11 +92,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Enter your password"
+                      className="h-12 text-base rounded-xl border-gray-200 focus:border-primary"
                       {...field}
                     />
                   </FormControl>
@@ -113,10 +106,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               )}
             />
             {error && (
-              <div className="text-sm text-destructive">{error}</div>
+              <div className="text-sm text-destructive bg-red-50 p-3 rounded-lg">{error}</div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-semibold rounded-xl shadow-md hover:shadow-lg transition-shadow" 
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               Sign in
             </Button>
           </form>
