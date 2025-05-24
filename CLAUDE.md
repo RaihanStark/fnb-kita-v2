@@ -89,3 +89,6 @@ This is a fresh Next.js template with no business logic implemented. When buildi
   - Available roles: Manager, Employee
 - **Get User Role**: `GET /api/test-get-role?email=user@example.com`
   - Returns current role and custom claims for a user
+
+## Development Best Practices
+- Always do manual testing after changes to make sure it's working
