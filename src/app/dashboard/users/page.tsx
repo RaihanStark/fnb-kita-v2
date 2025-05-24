@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { withRole } from '@/components/auth/with-role';
 import { useUserManagementStore } from '@/stores/user-management-store';
 import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, ChevronDown, Users } from 'lucide-react';
+import { Search, ChevronDown, Users, ArrowLeft } from 'lucide-react';
 import { RoleChangeDialog } from '@/components/user-management/role-change-dialog';
 
 function UsersPage() {
+  const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const {
     users,
@@ -65,7 +67,15 @@ function UsersPage() {
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="p-2 -ml-2 hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Button>
           <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             <Users className="w-5 h-5" />
             User Management
