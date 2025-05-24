@@ -129,32 +129,36 @@ export function ReimbursementForm() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-20">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="p-4 pb-20">
+      {/* Material Design Header */}
+      <div className="flex items-center gap-3 mb-8">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          className="hover:bg-gray-100 rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">New Reimbursement</h1>
+        <h1 className="text-2xl font-medium text-gray-900">New Reimbursement</h1>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Material Design Form Fields */}
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount (IDR)</FormLabel>
+                <FormLabel className="text-base font-medium text-gray-700">Amount (IDR)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(e.target.value)}
+                    className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base"
                   />
                 </FormControl>
                 <FormMessage />
@@ -167,18 +171,18 @@ export function ReimbursementForm() {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel className="text-base font-medium text-gray-700">Category</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="meal">Meal</SelectItem>
-                    <SelectItem value="transport">Transport</SelectItem>
-                    <SelectItem value="supplies">Supplies</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="meal">🍽️ Meal</SelectItem>
+                    <SelectItem value="transport">🚗 Transport</SelectItem>
+                    <SelectItem value="supplies">📦 Supplies</SelectItem>
+                    <SelectItem value="other">📋 Other</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -191,11 +195,11 @@ export function ReimbursementForm() {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel className="text-base font-medium text-gray-700">Description</FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Describe the expense..."
-                    className="min-h-[100px]"
+                    className="min-h-[120px] border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base resize-none"
                     {...field}
                   />
                 </FormControl>
@@ -204,40 +208,39 @@ export function ReimbursementForm() {
             )}
           />
 
-          <div className="space-y-2">
-            <Label>Receipt (Optional)</Label>
+          {/* Material Design File Upload */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium text-gray-700">Receipt (Optional)</Label>
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="receipt-upload"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById("receipt-upload")?.click()}
-                  className="w-full"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Receipt
-                </Button>
-              </div>
+              <Input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+                id="receipt-upload"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById("receipt-upload")?.click()}
+                className="w-full h-12 border-2 border-dashed border-gray-300 hover:border-orange-400 hover:bg-orange-50 transition-colors rounded-lg"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Upload Receipt
+              </Button>
               
               {receiptPreview && (
-                <div className="relative">
+                <div className="relative rounded-lg overflow-hidden shadow-md">
                   <img
                     src={receiptPreview}
                     alt="Receipt preview"
-                    className="w-full h-48 object-cover rounded-lg"
+                    className="w-full h-48 object-cover"
                   />
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
-                    className="absolute top-2 right-2"
+                    className="absolute top-3 right-3 shadow-lg"
                     onClick={() => {
                       setReceiptFile(null);
                       setReceiptPreview(null);
@@ -250,16 +253,21 @@ export function ReimbursementForm() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          {/* Material Design Action Buttons */}
+          <div className="flex gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="flex-1"
+              className="flex-1 h-12 border-gray-300 hover:bg-gray-50 rounded-lg"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="flex-1 h-12 bg-orange-600 hover:bg-orange-700 shadow-md rounded-lg"
+            >
               {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </div>

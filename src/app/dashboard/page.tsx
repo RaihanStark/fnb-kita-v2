@@ -67,18 +67,18 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      {/* User Info Card */}
-      <div className="px-4 pt-4">
-        <Card className="border border-orange-600 bg-gradient-to-r from-orange-500 to-orange-600">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
+      {/* Material Design User Info Card */}
+      <div className="p-4">
+        <Card className="shadow-md bg-gradient-to-r from-orange-500 to-orange-600 border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <User className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-white/90 text-sm">Welcome back!</p>
-                <p className="text-white font-semibold">{user?.email}</p>
-                <p className="text-white/80 text-xs mt-0.5">
+                <p className="text-white/90 text-sm font-medium">Welcome back</p>
+                <p className="text-white text-lg font-semibold mt-1">{user?.email}</p>
+                <p className="text-white/80 text-sm mt-0.5 capitalize">
                   {role || 'No role assigned'}
                 </p>
               </div>
@@ -87,45 +87,46 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Features Grid */}
-      <div className="px-4 pt-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      {/* Material Design Quick Actions */}
+      <div className="px-4">
+        <h2 className="text-xl font-medium text-gray-900 mb-6">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-4">
           {features.map((feature, index) => {
             const Icon = feature.icon
             return (
-              <Button
+              <Card
                 key={index}
-                variant="outline"
+                className="shadow-md border-0 hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-95"
                 onClick={() => feature.href && router.push(feature.href)}
-                className="h-auto flex-col items-start justify-start bg-white rounded-2xl p-4 border-2 border-gray-200 text-left hover:border-orange-300 hover:bg-transparent transition-colors active:scale-95"
               >
-                <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-3`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <p className="font-medium text-gray-900">{feature.label}</p>
-              </Button>
+                <CardContent className="p-6">
+                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <p className="font-medium text-gray-900 text-base">{feature.label}</p>
+                </CardContent>
+              </Card>
             )
           })}
         </div>
 
-        {/* Settings Section */}
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h2>
-          <Card className="border-2 border-gray-200">
+        {/* Material Design Settings Section */}
+        <div className="mt-8 pb-4">
+          <h2 className="text-xl font-medium text-gray-900 mb-6">Account Settings</h2>
+          <Card className="shadow-md border-0">
             <CardContent className="p-0">
               <Button
                 onClick={() => setShowChangePassword(true)}
                 variant="ghost"
-                className="w-full h-auto flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-none"
+                className="w-full h-auto flex items-center justify-between p-6 hover:bg-gray-50 transition-colors rounded-lg"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                     <Lock className="w-5 h-5 text-orange-600" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium text-gray-900">Change Password</p>
-                    <p className="text-sm text-gray-500">Update your password</p>
+                    <p className="font-medium text-gray-900 text-base">Change Password</p>
+                    <p className="text-sm text-gray-500 mt-1">Update your account password</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />

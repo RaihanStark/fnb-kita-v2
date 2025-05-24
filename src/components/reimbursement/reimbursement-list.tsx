@@ -78,10 +78,14 @@ export function ReimbursementList() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pb-20">
+    <div className="p-4 pb-20">
+      {/* Material Design Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Reimbursements</h1>
-        <Button onClick={() => router.push("/reimbursements/new")}>
+        <h1 className="text-2xl font-medium text-gray-900">Reimbursements</h1>
+        <Button 
+          onClick={() => router.push("/reimbursements/new")}
+          className="bg-orange-600 hover:bg-orange-700 shadow-md"
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Request
         </Button>
@@ -93,11 +97,17 @@ export function ReimbursementList() {
 
       <div className="mt-6">
         {reimbursements.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No reimbursements found</p>
-          </div>
+          <Card className="shadow-md border-0">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-lg font-medium mb-2">No reimbursements found</p>
+              <p className="text-gray-400 text-sm">Create your first reimbursement request</p>
+            </div>
+          </Card>
         ) : (
-          <>
+          <div className="space-y-3">
             {reimbursements.map((reimbursement) => (
               <ReimbursementCard
                 key={reimbursement.id}
@@ -107,11 +117,12 @@ export function ReimbursementList() {
             ))}
             
             {hasMore && (
-              <div className="text-center mt-4">
+              <div className="text-center mt-6">
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
+                  className="shadow-sm"
                 >
                   {isLoadingMore ? (
                     <>
@@ -124,7 +135,7 @@ export function ReimbursementList() {
                 </Button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
