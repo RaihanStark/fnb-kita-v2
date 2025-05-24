@@ -8,19 +8,13 @@ import { Utensils } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, role } = useAuth()
+  const { user } = useAuth()
 
   useEffect(() => {
     if (user) {
-      if (role === 'Manager') {
-        router.push('/manager')
-      } else if (role === 'Employee') {
-        router.push('/employee')
-      } else {
-        router.push('/dashboard')
-      }
+      router.push('/dashboard')
     }
-  }, [user, role, router])
+  }, [user, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col">

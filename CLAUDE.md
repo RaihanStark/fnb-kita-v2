@@ -77,3 +77,9 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 
 ## Component Guidelines
 - Always use UI components from Shadcn rather than custom CSS or basic HTML tags
+
+## Test API Endpoints (Development Only)
+- **Set User Role**: `POST /api/test-set-role?email=user@example.com&role=Manager`
+  - Available roles: Manager, Employee
+- **Get User Role**: `GET /api/test-get-role?email=user@example.com`
+  - Returns current role and custom claims for a user
