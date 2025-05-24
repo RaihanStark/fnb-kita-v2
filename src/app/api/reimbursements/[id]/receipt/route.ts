@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
+import { getAdminAuth, getAdminDb, getAdminStorage } from '@/lib/firebase/admin';
 
 export async function POST(
   request: NextRequest,
@@ -12,11 +12,11 @@ export async function POST(
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
 
     // Check if reimbursement exists and belongs to user
-    const docRef = adminDb.collection('reimbursements').doc(params.id);
+    const docRef = getAdminDb().collection('reimbursements').doc(params.id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -59,7 +59,7 @@ export async function POST(
 
     // Upload to Firebase Storage
     const fileName = `receipts/${params.id}/${Date.now()}_${file.name}`;
-    const bucket = adminStorage.bucket();
+    const bucket = getAdminStorage().bucket();
     const fileRef = bucket.file(fileName);
 
     await fileRef.save(buffer, {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET(
@@ -13,11 +13,11 @@ export async function GET(
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
     const userRole = decodedToken.role || 'Employee';
 
-    const doc = await adminDb.collection('reimbursements').doc(params.id).get();
+    const doc = await getAdminDb().collection('reimbursements').doc(params.id).get();
 
     if (!doc.exists) {
       return NextResponse.json({ error: 'Reimbursement not found' }, { status: 404 });
@@ -57,7 +57,7 @@ export async function PATCH(
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
     const userRole = decodedToken.role || 'Employee';
 
@@ -78,7 +78,7 @@ export async function PATCH(
     }
 
     // Check if reimbursement exists
-    const docRef = adminDb.collection('reimbursements').doc(params.id);
+    const docRef = getAdminDb().collection('reimbursements').doc(params.id);
     const doc = await docRef.get();
 
     if (!doc.exists) {

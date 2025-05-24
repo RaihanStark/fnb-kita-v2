@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase/admin';
+import { getAdminAuth } from '@/lib/firebase/admin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const token = authHeader.split('Bearer ')[1];
     
     // Verify the token and check if user is a Manager
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     if (decodedToken.role !== 'Manager') {
       return NextResponse.json({ error: 'Forbidden: Manager access required' }, { status: 403 });
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const roleFilter = searchParams.get('role') || '';
 
     // Get all users
-    const listUsersResult = await adminAuth.listUsers(1000); // Firebase max is 1000
+    const listUsersResult = await getAdminAuth().listUsers(1000); // Firebase max is 1000
     
     // Filter users based on search and role
     const filteredUsers = listUsersResult.users.filter(user => {

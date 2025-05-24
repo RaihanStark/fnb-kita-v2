@@ -1,6 +1,6 @@
 // Test script to verify Firebase setup
 import { app, auth } from './config';
-import { getAdminApp, adminAuth } from './admin';
+import { getAdminApp, getAdminAuth } from './admin';
 
 export async function testFirebaseSetup() {
   console.log('🔥 Testing Firebase Setup...\n');
@@ -69,7 +69,8 @@ export async function testFirebaseSetup() {
       console.log(`  🔧 Admin app name: ${adminApp.name}`);
     }
     
-    if (adminAuth) {
+    const adminAuthInstance = getAdminAuth();
+    if (adminAuthInstance) {
       console.log('  ✅ Firebase Admin Auth initialized');
     }
   } catch (error) {
