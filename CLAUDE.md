@@ -68,3 +68,6 @@ This is a fresh Next.js template with no business logic implemented. When buildi
 
 ## Important Development Practices
 - DO NOT WORK ON MAIN BRANCH! ALWAYS CREATE A NEW BRANCH and PULL REQUEST
+
+## Commit Guidelines
+- When doing commit, do not add any AI credit
