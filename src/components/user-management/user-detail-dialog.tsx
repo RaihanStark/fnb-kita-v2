@@ -102,7 +102,7 @@ export function UserDetailDialog() {
 
   return (
     <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-      <DialogContent className="w-full max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-50 p-0 mx-4">
+      <DialogContent className="w-full max-w-[95vw] md:max-w-2xl max-h-[90vh] bg-gray-50 p-0 mx-4 flex flex-col">
         <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -119,7 +119,13 @@ export function UserDetailDialog() {
           </div>
         </DialogHeader>
 
-        <div className="p-4 space-y-4">
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" 
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#d1d5db #f3f4f6',
+          }}
+        >
           {loadingUserDetail ? (
             <Card className="shadow-md border-0">
               <CardContent className="p-8 text-center">
