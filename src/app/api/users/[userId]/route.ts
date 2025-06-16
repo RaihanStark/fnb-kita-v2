@@ -31,6 +31,59 @@ export async function GET(
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.exists ? userDoc.data() : {};
 
+    // Migration helper: Convert old reimbursement format to new format
+    const migrateLimitReimbursement = (limitReimbursement: any) => {
+      if (!limitReimbursement) {
+        return {
+          internet: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          transport: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          makan: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          lainnya: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+        };
+      }
+
+      const result: any = {};
+      Object.keys(limitReimbursement).forEach(key => {
+        const value = limitReimbursement[key];
+        if (typeof value === 'number') {
+          // Old format: convert number to new object format
+          result[key] = {
+            limit: value,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        } else if (value && typeof value === 'object') {
+          // New format: ensure all required fields exist
+          result[key] = {
+            limit: value.limit || 0,
+            usage: value.usage || 0,
+            lastReset: value.lastReset || new Date().toISOString()
+          };
+        } else {
+          // Fallback
+          result[key] = {
+            limit: 0,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        }
+      });
+
+      // Ensure all required keys exist
+      const requiredKeys = ['internet', 'transport', 'makan', 'lainnya'];
+      requiredKeys.forEach(key => {
+        if (!result[key]) {
+          result[key] = {
+            limit: 0,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        }
+      });
+
+      return result;
+    };
+
     // Combine auth data with Firestore data
     const user = {
       uid: userRecord.uid,
@@ -45,12 +98,7 @@ export async function GET(
       posisi: userData.posisi || '',
       gaji: userData.gaji || { amount: 0, frequency: 'monthly', perBulan: 0, perMinggu: 0, perHari: 0 },
       status: userData.status || 'active',
-      limitReimbursement: userData.limitReimbursement || {
-        internet: 0,
-        transport: 0,
-        makan: 0,
-        lainnya: 0,
-      },
+      limitReimbursement: migrateLimitReimbursement(userData.limitReimbursement),
     };
 
     return NextResponse.json({ user });
@@ -107,6 +155,59 @@ export async function PUT(
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.exists ? userDoc.data() : {};
 
+    // Migration helper: Convert old reimbursement format to new format
+    const migrateLimitReimbursement = (limitReimbursement: any) => {
+      if (!limitReimbursement) {
+        return {
+          internet: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          transport: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          makan: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+          lainnya: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
+        };
+      }
+
+      const result: any = {};
+      Object.keys(limitReimbursement).forEach(key => {
+        const value = limitReimbursement[key];
+        if (typeof value === 'number') {
+          // Old format: convert number to new object format
+          result[key] = {
+            limit: value,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        } else if (value && typeof value === 'object') {
+          // New format: ensure all required fields exist
+          result[key] = {
+            limit: value.limit || 0,
+            usage: value.usage || 0,
+            lastReset: value.lastReset || new Date().toISOString()
+          };
+        } else {
+          // Fallback
+          result[key] = {
+            limit: 0,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        }
+      });
+
+      // Ensure all required keys exist
+      const requiredKeys = ['internet', 'transport', 'makan', 'lainnya'];
+      requiredKeys.forEach(key => {
+        if (!result[key]) {
+          result[key] = {
+            limit: 0,
+            usage: 0,
+            lastReset: new Date().toISOString()
+          };
+        }
+      });
+
+      return result;
+    };
+
     const user = {
       uid: userRecord.uid,
       email: userRecord.email,
@@ -119,12 +220,7 @@ export async function PUT(
       posisi: userData.posisi || '',
       gaji: userData.gaji || { amount: 0, frequency: 'monthly', perBulan: 0, perMinggu: 0, perHari: 0 },
       status: userData.status || 'active',
-      limitReimbursement: userData.limitReimbursement || {
-        internet: 0,
-        transport: 0,
-        makan: 0,
-        lainnya: 0,
-      },
+      limitReimbursement: migrateLimitReimbursement(userData.limitReimbursement),
     };
 
     return NextResponse.json({ user });

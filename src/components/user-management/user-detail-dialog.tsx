@@ -56,10 +56,10 @@ export function UserDetailDialog() {
         gajiAmount: userDetail.gaji?.amount || 0,
         gajiFrequency: userDetail.gaji?.frequency || "monthly",
         status: userDetail.status || "active",
-        limitInternet: userDetail.limitReimbursement?.internet || 0,
-        limitTransport: userDetail.limitReimbursement?.transport || 0,
-        limitMakan: userDetail.limitReimbursement?.makan || 0,
-        limitLainnya: userDetail.limitReimbursement?.lainnya || 0,
+        limitInternet: userDetail.limitReimbursement?.internet?.limit || 0,
+        limitTransport: userDetail.limitReimbursement?.transport?.limit || 0,
+        limitMakan: userDetail.limitReimbursement?.makan?.limit || 0,
+        limitLainnya: userDetail.limitReimbursement?.lainnya?.limit || 0,
       });
     }
   }, [userDetail]);
@@ -113,10 +113,26 @@ export function UserDetailDialog() {
       },
       status: formData.status,
       limitReimbursement: {
-        internet: formData.limitInternet,
-        transport: formData.limitTransport,
-        makan: formData.limitMakan,
-        lainnya: formData.limitLainnya,
+        internet: {
+          limit: formData.limitInternet,
+          usage: userDetail.limitReimbursement?.internet?.usage || 0,
+          lastReset: userDetail.limitReimbursement?.internet?.lastReset || new Date().toISOString(),
+        },
+        transport: {
+          limit: formData.limitTransport,
+          usage: userDetail.limitReimbursement?.transport?.usage || 0,
+          lastReset: userDetail.limitReimbursement?.transport?.lastReset || new Date().toISOString(),
+        },
+        makan: {
+          limit: formData.limitMakan,
+          usage: userDetail.limitReimbursement?.makan?.usage || 0,
+          lastReset: userDetail.limitReimbursement?.makan?.lastReset || new Date().toISOString(),
+        },
+        lainnya: {
+          limit: formData.limitLainnya,
+          usage: userDetail.limitReimbursement?.lainnya?.usage || 0,
+          lastReset: userDetail.limitReimbursement?.lainnya?.lastReset || new Date().toISOString(),
+        },
       },
     };
 
@@ -130,6 +146,27 @@ export function UserDetailDialog() {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  const getUsageDisplay = (reimbursementType: string) => {
+    const data = userDetail?.limitReimbursement?.[reimbursementType];
+    if (!data) return { usage: 0, limit: 0, displayText: "Rp 0 / Rp 0" };
+
+    // Check if usage should be reset (if last reset was more than 1 month ago)
+    const lastReset = new Date(data.lastReset);
+    const now = new Date();
+    const monthsDiff = (now.getFullYear() - lastReset.getFullYear()) * 12 + 
+                      (now.getMonth() - lastReset.getMonth());
+    
+    const usage = monthsDiff >= 1 ? 0 : data.usage;
+    const limit = data.limit;
+    
+    return {
+      usage,
+      limit,
+      displayText: `${formatCurrency(usage)} / ${formatCurrency(limit)}`,
+      isOverLimit: usage > limit
+    };
   };
 
   if (!userDetail) return null;
@@ -422,9 +459,14 @@ export function UserDetailDialog() {
                             placeholder="0"
                           />
                         ) : (
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(formData.limitInternet)}
-                          </p>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {getUsageDisplay('internet').displayText}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Limit: {formatCurrency(formData.limitInternet)}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -450,9 +492,14 @@ export function UserDetailDialog() {
                             placeholder="0"
                           />
                         ) : (
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(formData.limitTransport)}
-                          </p>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {getUsageDisplay('transport').displayText}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Limit: {formatCurrency(formData.limitTransport)}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -478,9 +525,14 @@ export function UserDetailDialog() {
                             placeholder="0"
                           />
                         ) : (
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(formData.limitMakan)}
-                          </p>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {getUsageDisplay('makan').displayText}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Limit: {formatCurrency(formData.limitMakan)}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -506,9 +558,14 @@ export function UserDetailDialog() {
                             placeholder="0"
                           />
                         ) : (
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(formData.limitLainnya)}
-                          </p>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {getUsageDisplay('lainnya').displayText}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Limit: {formatCurrency(formData.limitLainnya)}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>

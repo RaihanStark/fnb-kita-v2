@@ -20,7 +20,11 @@ export interface User {
   };
   status?: 'active' | 'inactive' | 'suspended';
   limitReimbursement?: {
-    [key: string]: number; // e.g., { internet: 500000, transport: 1000000 }
+    [key: string]: {
+      limit: number;
+      usage: number;
+      lastReset: string; // ISO date string for monthly reset tracking
+    };
   };
 }
 
