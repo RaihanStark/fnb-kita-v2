@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,12 +26,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import useAuthStore from "@/stores/auth-store";
 import useReimbursementStore from "@/stores/reimbursement-store";
-import { ArrowLeft, Upload } from "lucide-react";
+import { useUserManagementStore, User } from "@/stores/user-management-store";
+import { Upload } from "lucide-react";
 import { getAuth } from "firebase/auth";
 
 const formSchema = z.object({
   amount: z.string().min(1, "Amount is required").transform((val) => parseFloat(val)),
-  category: z.enum(["meal", "transport", "supplies", "other"]),
+  expenseType: z.enum(["personal", "business"]),
+  category: z.string().min(1, "Category is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
 });
 
@@ -41,18 +43,49 @@ export function ReimbursementForm() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { submitReimbursement } = useReimbursementStore();
+  const { fetchUserDetail, userDetail } = useUserManagementStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: 0,
-      category: "meal",
+      expenseType: "personal",
+      category: "",
       description: "",
     },
   });
+
+  // Fetch current user details on mount
+  useEffect(() => {
+    if (user?.uid) {
+      fetchUserDetail(user.uid);
+    }
+  }, [user?.uid, fetchUserDetail]);
+
+  // Update local user state when userDetail changes
+  useEffect(() => {
+    if (userDetail) {
+      setCurrentUser(userDetail);
+    }
+  }, [userDetail]);
+
+  // Watch expense type to reset category when switching
+  const expenseType = form.watch('expenseType');
+  useEffect(() => {
+    form.setValue('category', '');
+  }, [expenseType, form]);
+
+  // Get available categories based on expense type
+  const getAvailableCategories = () => {
+    if (expenseType === 'personal' && currentUser?.limitReimbursement) {
+      return Object.keys(currentUser.limitReimbursement);
+    }
+    return []; // For business expenses, we'll use a text input instead
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,6 +127,7 @@ export function ReimbursementForm() {
         employeeName: user.displayName || user.email?.split("@")[0] || "Unknown",
         employeeEmail: user.email || "",
         amount: data.amount,
+        expenseType: data.expenseType,
         category: data.category,
         description: data.description,
       });
@@ -155,24 +189,66 @@ export function ReimbursementForm() {
 
           <FormField
             control={form.control}
+            name="expenseType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium text-gray-700">Expense Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base">
+                      <SelectValue placeholder="Select expense type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="personal">👤 Personal (Counts toward limits)</SelectItem>
+                    <SelectItem value="business">💼 Business (No limits)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="category"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base font-medium text-gray-700">Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                {expenseType === 'personal' ? (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {getAvailableCategories().map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
                   <FormControl>
-                    <SelectTrigger className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
+                    <Input
+                      placeholder="Enter category (e.g., Office Supplies, Client Meeting)"
+                      {...field}
+                      className="h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-lg text-base"
+                    />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="meal">🍽️ Meal</SelectItem>
-                    <SelectItem value="transport">🚗 Transport</SelectItem>
-                    <SelectItem value="supplies">📦 Supplies</SelectItem>
-                    <SelectItem value="other">📋 Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                )}
                 <FormMessage />
+                {expenseType === 'personal' && currentUser?.limitReimbursement && field.value && (
+                  <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-800">
+                      <span className="font-medium">Current usage:</span> {' '}
+                      Rp {currentUser.limitReimbursement[field.value]?.usage?.toLocaleString('id-ID') || 0} / {' '}
+                      Rp {currentUser.limitReimbursement[field.value]?.limit?.toLocaleString('id-ID') || 0}
+                    </p>
+                  </div>
+                )}
               </FormItem>
             )}
           />

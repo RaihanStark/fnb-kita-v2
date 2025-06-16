@@ -113,14 +113,68 @@ export async function POST(request: NextRequest) {
     const userEmail = userRecord.email || '';
 
     const body = await request.json();
-    const { amount, category, description, receiptUrl } = body;
+    const { amount, expenseType, category, description, receiptUrl } = body;
 
     // Validate required fields
-    if (!amount || !category || !description) {
+    if (!amount || !expenseType || !category || !description) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Validate expense type
+    if (!['personal', 'business'].includes(expenseType)) {
+      return NextResponse.json(
+        { error: 'Invalid expense type' },
+        { status: 400 }
+      );
+    }
+
+    // For personal expenses, check and update user limits
+    if (expenseType === 'personal') {
+      const userDoc = await getAdminDb().collection('users').doc(userId).get();
+      if (!userDoc.exists) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        );
+      }
+
+      const userData = userDoc.data();
+      const limitReimbursement = userData?.limitReimbursement || {};
+
+      // Check if category exists in user limits
+      if (!limitReimbursement[category]) {
+        return NextResponse.json(
+          { error: `Category '${category}' not found in your reimbursement limits` },
+          { status: 400 }
+        );
+      }
+
+      const categoryLimit = limitReimbursement[category];
+      const currentUsage = categoryLimit.usage || 0;
+      const limit = categoryLimit.limit || 0;
+
+      // Check if adding this amount would exceed the limit
+      if (currentUsage + Number(amount) > limit) {
+        return NextResponse.json(
+          { error: `This expense would exceed your ${category} limit. Current: Rp ${currentUsage.toLocaleString('id-ID')}, Limit: Rp ${limit.toLocaleString('id-ID')}, Requested: Rp ${Number(amount).toLocaleString('id-ID')}` },
+          { status: 400 }
+        );
+      }
+
+      // Update the usage (will be committed after reimbursement creation)
+      const newUsage = currentUsage + Number(amount);
+      limitReimbursement[category] = {
+        ...categoryLimit,
+        usage: newUsage
+      };
+
+      // Update user document with new usage
+      await getAdminDb().collection('users').doc(userId).update({
+        limitReimbursement
+      });
     }
 
     // Create reimbursement
@@ -129,6 +183,7 @@ export async function POST(request: NextRequest) {
       employeeName: userName,
       employeeEmail: userEmail,
       amount: Number(amount),
+      expenseType,
       category,
       description,
       receiptUrl: receiptUrl || null,

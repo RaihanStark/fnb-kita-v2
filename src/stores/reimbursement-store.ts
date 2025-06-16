@@ -57,7 +57,8 @@ interface ReimbursementStore {
 
 const initialFormData: Partial<Omit<Reimbursement, 'id' | 'submittedDate' | 'status'>> = {
   amount: 0,
-  category: 'meal',
+  expenseType: 'personal',
+  category: '',
   description: '',
 };
 

@@ -95,6 +95,33 @@ export async function PATCH(
       );
     }
 
+    // Handle personal expense limit adjustments when denying
+    if (status === 'denied' && currentData.expenseType === 'personal' && currentData.status === 'pending') {
+      const userDoc = await getAdminDb().collection('users').doc(currentData.employeeId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const limitReimbursement = userData?.limitReimbursement || {};
+        
+        if (limitReimbursement[currentData.category]) {
+          const categoryLimit = limitReimbursement[currentData.category];
+          const currentUsage = categoryLimit.usage || 0;
+          const reimbursementAmount = currentData.amount || 0;
+          
+          // Subtract the amount from usage since it was denied
+          const newUsage = Math.max(0, currentUsage - reimbursementAmount);
+          limitReimbursement[currentData.category] = {
+            ...categoryLimit,
+            usage: newUsage
+          };
+
+          // Update user document
+          await getAdminDb().collection('users').doc(currentData.employeeId).update({
+            limitReimbursement
+          });
+        }
+      }
+    }
+
     // Update reimbursement
     const updateData: Record<string, any> = {
       status,

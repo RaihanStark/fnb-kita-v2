@@ -24,7 +24,8 @@ export interface Reimbursement {
   employeeName: string;
   employeeEmail: string;
   amount: number;
-  category: 'meal' | 'transport' | 'supplies' | 'other';
+  expenseType: 'personal' | 'business';
+  category: string; // For personal: user's limit categories, for business: freeform
   description: string;
   receiptUrl?: string;
   status: 'pending' | 'approved' | 'denied' | 'paid';

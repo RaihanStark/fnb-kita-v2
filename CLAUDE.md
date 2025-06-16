@@ -116,13 +116,22 @@ src/
   - Weekly rate calculation  
   - Monthly rate calculation
 
-### 🧾 Reimbursement Tracking System
-- **Usage monitoring** with monthly reset functionality
-- **Limit management** per reimbursement category
-- **Usage/Limit display format** (e.g., "Rp 100,000 / Rp 500,000")
-- **Multiple categories**: Internet, Transport, Food (Makan), Others (Lainnya)
-- **Automatic monthly reset** based on last reset date
-- **Manager-configurable limits**
+### 🧾 Integrated Reimbursement System
+- **Dual Expense Types**: Personal (limited) vs Business (unlimited)
+- **Smart Category Selection**:
+  - Personal: Dropdown from user's limit categories
+  - Business: Freeform text input for custom categories
+- **Real-time Limit Tracking**:
+  - Live usage display (e.g., "Rp 100,000 / Rp 500,000")
+  - Pre-submission validation to prevent limit violations
+  - Automatic usage updates when personal expenses are submitted
+- **Intelligent Limit Management**:
+  - Usage tracking only for personal expenses
+  - Automatic reversal when personal expenses are denied
+  - Monthly reset functionality preserved
+- **User Integration**: 
+  - Categories sourced from user management settings
+  - Seamless connection between user limits and expense tracking
 
 ### 🎨 Design System
 - **Material Design 3** implementation
@@ -185,11 +194,96 @@ src/
 5. **Account creation**: Automatic Firebase user creation with manager-defined profile
 6. **Role assignment**: Automatic custom claims based on manager's selection
 
+## Integrated Reimbursement & User Management
+
+### 🔗 System Integration Overview
+The reimbursement system is fully integrated with user management, providing intelligent expense tracking that respects individual user limits while maintaining flexibility for business needs.
+
+### 🎯 Dual Expense Type System
+
+#### **Personal Expenses**
+- **Limit Enforcement**: Tied to user's `limitReimbursement` settings
+- **Category Restrictions**: Only categories defined in user profile are available
+- **Usage Tracking**: Automatically updates user's monthly usage counters
+- **Validation**: Pre-submission checks prevent limit violations
+- **Smart Feedback**: Real-time display of current usage vs. limits
+
+#### **Business Expenses**
+- **No Limits**: Unrestricted amounts for legitimate business needs
+- **Freeform Categories**: Custom text input for any business category
+- **Flexible Processing**: No usage tracking or limit validation
+- **Professional Categories**: e.g., "Client Meeting", "Office Supplies", "Business Travel"
+
+### 🔄 Intelligent Limit Management
+
+#### **Real-time Usage Tracking**
+```typescript
+// Example limit display in form
+Current usage: Rp 100,000 / Rp 500,000 (Internet category)
+Remaining: Rp 400,000
+```
+
+#### **Automatic Updates**
+- **Submission**: Immediately increments usage for personal expenses
+- **Approval**: No additional changes (usage already counted)
+- **Denial**: Automatically reverts usage back to previous amount
+- **Monthly Reset**: Existing reset logic continues to work seamlessly
+
+#### **Error Prevention**
+- **Pre-validation**: Form prevents submission if limits would be exceeded
+- **Clear Messages**: Detailed error explanations with current usage context
+- **Smart Suggestions**: Guidance on available budget per category
+
+### 📊 Data Flow Integration
+
+#### **Form Interaction**
+1. User selects **expense type** (Personal/Business)
+2. **Personal**: Dropdown populated from user's limit categories
+3. **Business**: Text input for custom category
+4. **Real-time feedback**: Usage display for personal categories
+5. **Submission validation**: Limit checks before API call
+
+#### **API Processing**
+1. **Personal expenses**: Validate against user limits → Update usage → Create reimbursement
+2. **Business expenses**: Skip limit checks → Create reimbursement directly
+3. **Status updates**: Adjust usage counters when personal expenses are denied
+
+#### **User Profile Synchronization**
+- **Bidirectional sync**: Changes to user limits reflect in reimbursement forms
+- **Consistent data**: Single source of truth for category definitions
+- **Monthly resets**: Automated usage reset maintains data integrity
+
+### 🛡️ Enhanced Validation & Security
+
+#### **Comprehensive Checks**
+- **Category validation**: Personal expenses must use defined categories
+- **Limit enforcement**: Cannot exceed monthly allowances
+- **User profile verification**: Ensures user limits are properly configured
+- **Data consistency**: Validates user profile exists before processing
+
+#### **Error Handling**
+- **Graceful degradation**: Handles missing user profiles
+- **Detailed feedback**: Specific error messages for different failure scenarios
+- **Recovery mechanisms**: Automatic usage reversal for denied personal expenses
+
+### 🎨 Enhanced User Experience
+
+#### **Dynamic UI Adaptation**
+- **Context-aware forms**: UI changes based on expense type selection
+- **Visual indicators**: Clear differentiation between personal and business expenses
+- **Progress visualization**: Usage bars and percentage displays
+- **Smart defaults**: Remembers user preferences and common categories
+
+#### **Intelligent Feedback**
+- **Real-time validation**: Immediate feedback on limit availability
+- **Usage predictions**: Shows impact of current submission on monthly budget
+- **Category guidance**: Helps users understand their available expense categories
+
 ## Current Implementation Status
 This is a fully functional internal management system with:
 1. Complete authentication and user management with invitation system
 2. Advanced salary management with multiple payment frequencies
-3. Comprehensive reimbursement tracking with usage monitoring
+3. **Integrated reimbursement system with user limit enforcement**
 4. Material Design 3 UI with mobile-first approach
 5. Role-based access control throughout the application
 6. Secure employee invitation and onboarding workflow
@@ -231,8 +325,9 @@ This is a fully functional internal management system with:
 ### Reimbursement Endpoints
 - **List Reimbursements**: `GET /api/reimbursements`
 - **Get Reimbursement**: `GET /api/reimbursements/[id]`
-- **Create Reimbursement**: `POST /api/reimbursements`
-- **Update Reimbursement**: `PUT /api/reimbursements/[id]`
+- **Create Reimbursement**: `POST /api/reimbursements` (with expense type and limit validation)
+- **Update Reimbursement Status**: `PATCH /api/reimbursements/[id]` (with automatic usage adjustments)
+- **Upload Receipt**: `POST /api/reimbursements/[id]/receipt`
 
 ### Test API Endpoints (Development Only)
 - **Set User Role**: `POST /api/test-set-role?email=user@example.com&role=Manager`
