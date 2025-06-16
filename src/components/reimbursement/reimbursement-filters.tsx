@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAuthStore from "@/stores/auth-store";
 import useReimbursementStore from "@/stores/reimbursement-store";
 import { Button } from "@/components/ui/button";
@@ -14,26 +14,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Filter, X } from "lucide-react";
+import { Filter, X, ChevronDown } from "lucide-react";
 
 export function ReimbursementFilters() {
   const { user, role } = useAuthStore();
   const { filters, setFilters, resetFilters, fetchReimbursements } = useReimbursementStore();
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
-    status: filters.status || "",
-    employeeId: filters.employeeId || "",
-    startDate: filters.startDate ? filters.startDate.toISOString().split("T")[0] : "",
-    endDate: filters.endDate ? filters.endDate.toISOString().split("T")[0] : "",
+    status: "all",
+    employeeId: "",
+    startDate: "",
+    endDate: "",
   });
+
+  // Sync local filters with store filters
+  useEffect(() => {
+    setLocalFilters({
+      status: filters.status || "all",
+      employeeId: filters.employeeId || "",
+      startDate: filters.startDate ? filters.startDate.toISOString().split("T")[0] : "",
+      endDate: filters.endDate ? filters.endDate.toISOString().split("T")[0] : "",
+    });
+  }, [filters]);
 
   const handleApplyFilters = () => {
     const newFilters: Record<string, any> = {};
     
-    if (localFilters.status) newFilters.status = localFilters.status;
-    if (localFilters.employeeId && role === "Manager") newFilters.employeeId = localFilters.employeeId;
-    if (localFilters.startDate) newFilters.startDate = new Date(localFilters.startDate);
-    if (localFilters.endDate) newFilters.endDate = new Date(localFilters.endDate);
+    if (localFilters.status && localFilters.status !== "all") {
+      newFilters.status = localFilters.status;
+    }
+    if (localFilters.employeeId && role === "Manager") {
+      newFilters.employeeId = localFilters.employeeId;
+    }
+    if (localFilters.startDate) {
+      newFilters.startDate = new Date(localFilters.startDate);
+    }
+    if (localFilters.endDate) {
+      newFilters.endDate = new Date(localFilters.endDate);
+    }
     
     setFilters(newFilters);
     if (user) {
@@ -44,7 +62,7 @@ export function ReimbursementFilters() {
 
   const handleResetFilters = () => {
     setLocalFilters({
-      status: "",
+      status: "all",
       employeeId: "",
       startDate: "",
       endDate: "",
@@ -89,7 +107,7 @@ export function ReimbursementFilters() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="denied">Denied</SelectItem>
