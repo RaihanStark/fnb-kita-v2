@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { withRole } from '@/components/auth/with-role';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUserManagementStore } from '@/stores/user-management-store';
@@ -8,9 +8,10 @@ import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, ChevronDown, Users, Eye } from 'lucide-react';
+import { Search, ChevronDown, Users, Eye, UserPlus, Clock, Copy, RefreshCw, X, CheckCircle } from 'lucide-react';
 import { RoleChangeDialog } from '@/components/user-management/role-change-dialog';
 import { UserDetailDialog } from '@/components/user-management/user-detail-dialog';
+import { InviteEmployeeDialog } from '@/components/user-management/invite-employee-dialog';
 
 function UsersPage() {
   const { user: currentUser } = useAuthStore();
@@ -28,7 +29,12 @@ function UsersPage() {
     setShowRoleChangeDialog,
     setShowUserDetailDialog,
     fetchUserDetail,
+    resendInvitation,
+    cancelInvitation,
   } = useUserManagementStore();
+
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [copiedInviteLink, setCopiedInviteLink] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -56,6 +62,37 @@ function UsersPage() {
     setShowUserDetailDialog(true);
   };
 
+  const handleCopyInviteLink = async (user: typeof users[0]) => {
+    if (user.registered === 'invited' && user.invitationToken) {
+      const baseUrl = window.location.origin;
+      const inviteLink = `${baseUrl}/invite/${user.invitationToken}`;
+      
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        setCopiedInviteLink(user.uid);
+        setTimeout(() => setCopiedInviteLink(null), 2000);
+      } catch (error) {
+        console.error('Failed to copy link:', error);
+      }
+    }
+  };
+
+  const handleResendInvitation = async (user: typeof users[0]) => {
+    try {
+      await resendInvitation(user.uid);
+    } catch (error) {
+      console.error('Failed to resend invitation:', error);
+    }
+  };
+
+  const handleCancelInvitation = async (user: typeof users[0]) => {
+    try {
+      await cancelInvitation(user.uid);
+    } catch (error) {
+      console.error('Failed to cancel invitation:', error);
+    }
+  };
+
   const formatLastLogin = (lastLogin: string | null) => {
     if (!lastLogin) return 'Never';
     const date = new Date(lastLogin);
@@ -75,6 +112,16 @@ function UsersPage() {
       title="User Management" 
       allowedRoles={['Manager']}
       showBackButton={true}
+      trailingActions={
+        <Button
+          size="sm"
+          onClick={() => setShowInviteDialog(true)}
+          className="bg-orange-500 hover:bg-orange-600 text-white shadow-md"
+        >
+          <UserPlus className="w-4 h-4 mr-2" />
+          Invite
+        </Button>
+      }
     >
       <div className="flex flex-col h-full">
         {/* Material Design Search and Filter */}
@@ -152,7 +199,21 @@ function UsersPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 text-lg">{user.email}</h3>
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-gray-900 text-lg">{user.email}</h3>
+                          {user.registered === 'invited' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                              <Clock className="w-3 h-3" />
+                              Invited
+                            </span>
+                          )}
+                          {user.registered === 'registered' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                              <CheckCircle className="w-3 h-3" />
+                              Active
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-2">
                             <span
@@ -162,28 +223,72 @@ function UsersPage() {
                             />
                             <span className="font-medium text-gray-700">{user.role}</span>
                           </span>
-                          <span className="text-gray-500">Last login: {formatLastLogin(user.lastLogin)}</span>
+                          {user.registered === 'registered' ? (
+                            <span className="text-gray-500">Last login: {formatLastLogin(user.lastLogin)}</span>
+                          ) : (
+                            <span className="text-gray-500">
+                              Invited {user.invitedAt ? new Date(user.invitedAt).toLocaleDateString() : ''}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewDetailsClick(user)}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50 shadow-sm"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Details
-                        </Button>
-                        {user.uid !== currentUser?.uid && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRoleChangeClick(user)}
-                            className="text-orange-600 border-orange-200 hover:bg-orange-50 shadow-sm"
-                          >
-                            Change Role
-                          </Button>
+                        {user.registered === 'registered' ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetailsClick(user)}
+                              className="text-blue-600 border-blue-200 hover:bg-blue-50 shadow-sm"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Details
+                            </Button>
+                            {user.uid !== currentUser?.uid && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRoleChangeClick(user)}
+                                className="text-orange-600 border-orange-200 hover:bg-orange-50 shadow-sm"
+                              >
+                                Change Role
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCopyInviteLink(user)}
+                              className="text-blue-600 border-blue-200 hover:bg-blue-50 shadow-sm"
+                            >
+                              {copiedInviteLink === user.uid ? (
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                              ) : (
+                                <Copy className="w-4 h-4 mr-1" />
+                              )}
+                              {copiedInviteLink === user.uid ? 'Copied!' : 'Copy Link'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleResendInvitation(user)}
+                              className="text-green-600 border-green-200 hover:bg-green-50 shadow-sm"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-1" />
+                              Resend
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCancelInvitation(user)}
+                              className="text-red-600 border-red-200 hover:bg-red-50 shadow-sm"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Cancel
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -226,6 +331,10 @@ function UsersPage() {
         {/* Dialogs */}
         <RoleChangeDialog />
         <UserDetailDialog />
+        <InviteEmployeeDialog 
+          open={showInviteDialog} 
+          onOpenChange={setShowInviteDialog} 
+        />
       </div>
     </AppLayout>
   );

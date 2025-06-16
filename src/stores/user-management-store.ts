@@ -26,6 +26,12 @@ export interface User {
       lastReset: string; // ISO date string for monthly reset tracking
     };
   };
+  // Registration and invitation tracking
+  registered: 'invited' | 'registered';
+  invitationToken?: string;
+  invitationExpiry?: string; // ISO date string
+  invitedAt?: string; // ISO date string
+  invitedBy?: string; // Manager's email who sent the invitation
 }
 
 interface UserManagementState {
@@ -66,6 +72,9 @@ interface UserManagementState {
   setUserDetail: (user: User | null) => void;
   fetchUserDetail: (userId: string) => Promise<void>;
   updateUserDetail: (userId: string, updates: Partial<User>) => Promise<void>;
+  inviteEmployee: (email: string, role: 'Manager' | 'Employee', fullName: string) => Promise<void>;
+  resendInvitation: (userId: string) => Promise<void>;
+  cancelInvitation: (userId: string) => Promise<void>;
 }
 
 export const useUserManagementStore = create<UserManagementState>((set, get) => ({
@@ -213,6 +222,91 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
       set({
         error: error instanceof Error ? error.message : 'An error occurred',
         updatingUserDetail: false,
+      });
+    }
+  },
+
+  inviteEmployee: async (email: string, role: 'Manager' | 'Employee', fullName: string) => {
+    set({ loading: true, error: null });
+
+    try {
+      const response = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getIdToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, role, fullName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to invite employee');
+      }
+
+      // Refresh users list
+      await get().fetchUsers();
+      
+      set({ loading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'An error occurred',
+        loading: false,
+      });
+      throw error;
+    }
+  },
+
+  resendInvitation: async (userId: string) => {
+    set({ loading: true, error: null });
+
+    try {
+      const response = await fetch(`/api/users/${userId}/resend-invitation`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getIdToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resend invitation');
+      }
+
+      // Refresh users list
+      await get().fetchUsers();
+      
+      set({ loading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'An error occurred',
+        loading: false,
+      });
+    }
+  },
+
+  cancelInvitation: async (userId: string) => {
+    set({ loading: true, error: null });
+
+    try {
+      const response = await fetch(`/api/users/${userId}/cancel-invitation`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getIdToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel invitation');
+      }
+
+      // Refresh users list
+      await get().fetchUsers();
+      
+      set({ loading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'An error occurred',
+        loading: false,
       });
     }
   },
