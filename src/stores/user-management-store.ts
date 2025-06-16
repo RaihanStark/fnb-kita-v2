@@ -7,6 +7,19 @@ export interface User {
   role: 'Manager' | 'Employee';
   lastLogin: string | null;
   createdAt: string | null;
+  // Additional user details
+  nama?: string;
+  kontak?: string;
+  posisi?: string;
+  gaji?: {
+    perBulan: number;
+    perMinggu: number;
+    perHari: number;
+  };
+  status?: 'active' | 'inactive' | 'suspended';
+  limitReimbursement?: {
+    [key: string]: number; // e.g., { internet: 500000, transport: 1000000 }
+  };
 }
 
 interface UserManagementState {
@@ -26,6 +39,10 @@ interface UserManagementState {
   selectedUser: User | null;
   showRoleChangeDialog: boolean;
   updatingRole: boolean;
+  showUserDetailDialog: boolean;
+  userDetail: User | null;
+  loadingUserDetail: boolean;
+  updatingUserDetail: boolean;
   
   // Actions
   setUsers: (users: User[]) => void;
@@ -39,6 +56,10 @@ interface UserManagementState {
   setUpdatingRole: (updating: boolean) => void;
   updateUserRole: (userId: string, newRole: 'Manager' | 'Employee') => void;
   fetchUsers: () => Promise<void>;
+  setShowUserDetailDialog: (show: boolean) => void;
+  setUserDetail: (user: User | null) => void;
+  fetchUserDetail: (userId: string) => Promise<void>;
+  updateUserDetail: (userId: string, updates: Partial<User>) => Promise<void>;
 }
 
 export const useUserManagementStore = create<UserManagementState>((set, get) => ({
@@ -58,6 +79,10 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
   selectedUser: null,
   showRoleChangeDialog: false,
   updatingRole: false,
+  showUserDetailDialog: false,
+  userDetail: null,
+  loadingUserDetail: false,
+  updatingUserDetail: false,
 
   setUsers: (users) => set({ users }),
   setLoading: (loading) => set({ loading }),
@@ -76,6 +101,8 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
   setSelectedUser: (user) => set({ selectedUser: user }),
   setShowRoleChangeDialog: (show) => set({ showRoleChangeDialog: show }),
   setUpdatingRole: (updating) => set({ updatingRole: updating }),
+  setShowUserDetailDialog: (show) => set({ showUserDetailDialog: show }),
+  setUserDetail: (user) => set({ userDetail: user }),
 
   updateUserRole: (userId, newRole) => {
     set((state) => ({
@@ -117,6 +144,69 @@ export const useUserManagementStore = create<UserManagementState>((set, get) => 
       set({
         error: error instanceof Error ? error.message : 'An error occurred',
         loading: false,
+      });
+    }
+  },
+
+  fetchUserDetail: async (userId: string) => {
+    set({ loadingUserDetail: true, error: null });
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${await getIdToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user details');
+      }
+
+      const data = await response.json();
+      set({
+        userDetail: data.user,
+        loadingUserDetail: false,
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'An error occurred',
+        loadingUserDetail: false,
+      });
+    }
+  },
+
+  updateUserDetail: async (userId: string, updates: Partial<User>) => {
+    set({ updatingUserDetail: true, error: null });
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${await getIdToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user details');
+      }
+
+      const data = await response.json();
+      
+      // Update the user in the list
+      set((state) => ({
+        users: state.users.map((user) =>
+          user.uid === userId ? { ...user, ...updates } : user
+        ),
+        userDetail: data.user,
+        updatingUserDetail: false,
+        showUserDetailDialog: false,
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'An error occurred',
+        updatingUserDetail: false,
       });
     }
   },

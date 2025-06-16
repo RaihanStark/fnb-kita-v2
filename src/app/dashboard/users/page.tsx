@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { withRole } from '@/components/auth/with-role';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUserManagementStore } from '@/stores/user-management-store';
@@ -9,11 +8,11 @@ import useAuthStore from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, ChevronDown, Users, ArrowLeft } from 'lucide-react';
+import { Search, ChevronDown, Users, Eye } from 'lucide-react';
 import { RoleChangeDialog } from '@/components/user-management/role-change-dialog';
+import { UserDetailDialog } from '@/components/user-management/user-detail-dialog';
 
 function UsersPage() {
-  const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const {
     users,
@@ -27,6 +26,8 @@ function UsersPage() {
     setPagination,
     setSelectedUser,
     setShowRoleChangeDialog,
+    setShowUserDetailDialog,
+    fetchUserDetail,
   } = useUserManagementStore();
 
   useEffect(() => {
@@ -48,6 +49,11 @@ function UsersPage() {
   const handleRoleChangeClick = (user: typeof users[0]) => {
     setSelectedUser(user);
     setShowRoleChangeDialog(true);
+  };
+
+  const handleViewDetailsClick = async (user: typeof users[0]) => {
+    await fetchUserDetail(user.uid);
+    setShowUserDetailDialog(true);
   };
 
   const formatLastLogin = (lastLogin: string | null) => {
@@ -159,16 +165,27 @@ function UsersPage() {
                           <span className="text-gray-500">Last login: {formatLastLogin(user.lastLogin)}</span>
                         </div>
                       </div>
-                      {user.uid !== currentUser?.uid && (
+                      <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleRoleChangeClick(user)}
-                          className="text-orange-600 border-orange-200 hover:bg-orange-50 shadow-sm"
+                          onClick={() => handleViewDetailsClick(user)}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50 shadow-sm"
                         >
-                          Change Role
+                          <Eye className="w-4 h-4 mr-1" />
+                          Details
                         </Button>
-                      )}
+                        {user.uid !== currentUser?.uid && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRoleChangeClick(user)}
+                            className="text-orange-600 border-orange-200 hover:bg-orange-50 shadow-sm"
+                          >
+                            Change Role
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -206,8 +223,9 @@ function UsersPage() {
           )}
         </div>
 
-        {/* Role Change Dialog */}
+        {/* Dialogs */}
         <RoleChangeDialog />
+        <UserDetailDialog />
       </div>
     </AppLayout>
   );
