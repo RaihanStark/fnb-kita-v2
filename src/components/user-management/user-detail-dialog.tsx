@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, Briefcase, DollarSign, Shield, User, Wifi, Car, UtensilsCrossed, Package2, Save, X } from "lucide-react";
+import { Phone, Mail, Briefcase, DollarSign, Shield, User, Wifi, Package2, Save, X } from "lucide-react";
 
 export function UserDetailDialog() {
   const { role } = useAuthStore();
@@ -42,8 +42,6 @@ export function UserDetailDialog() {
     gajiFrequency: "monthly" as "daily" | "weekly" | "monthly",
     status: "active" as "active" | "inactive" | "suspended",
     limitInternet: 0,
-    limitTransport: 0,
-    limitMakan: 0,
     limitLainnya: 0,
   });
 
@@ -57,8 +55,6 @@ export function UserDetailDialog() {
         gajiFrequency: userDetail.gaji?.frequency || "monthly",
         status: userDetail.status || "active",
         limitInternet: userDetail.limitReimbursement?.internet?.limit || 0,
-        limitTransport: userDetail.limitReimbursement?.transport?.limit || 0,
-        limitMakan: userDetail.limitReimbursement?.makan?.limit || 0,
         limitLainnya: userDetail.limitReimbursement?.lainnya?.limit || 0,
       });
     }
@@ -117,16 +113,6 @@ export function UserDetailDialog() {
           limit: formData.limitInternet,
           usage: userDetail.limitReimbursement?.internet?.usage || 0,
           lastReset: userDetail.limitReimbursement?.internet?.lastReset || new Date().toISOString(),
-        },
-        transport: {
-          limit: formData.limitTransport,
-          usage: userDetail.limitReimbursement?.transport?.usage || 0,
-          lastReset: userDetail.limitReimbursement?.transport?.lastReset || new Date().toISOString(),
-        },
-        makan: {
-          limit: formData.limitMakan,
-          usage: userDetail.limitReimbursement?.makan?.usage || 0,
-          lastReset: userDetail.limitReimbursement?.makan?.lastReset || new Date().toISOString(),
         },
         lainnya: {
           limit: formData.limitLainnya,
@@ -437,7 +423,7 @@ export function UserDetailDialog() {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-6">Reimbursement Limits</h3>
                   
-                  <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                         <Wifi className="w-5 h-5 text-blue-600" />
@@ -465,72 +451,6 @@ export function UserDetailDialog() {
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
                               Limit: {formatCurrency(formData.limitInternet)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <Car className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="limitTransport" className="text-sm text-gray-600">Transport</Label>
-                        {isEditing ? (
-                          <Input
-                            id="limitTransport"
-                            type="number"
-                            value={formData.limitTransport}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                limitTransport: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            className="mt-1 border-gray-200 focus:border-orange-500"
-                            placeholder="0"
-                          />
-                        ) : (
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {getUsageDisplay('transport').displayText}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Limit: {formatCurrency(formData.limitTransport)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <UtensilsCrossed className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="limitMakan" className="text-sm text-gray-600">Makan</Label>
-                        {isEditing ? (
-                          <Input
-                            id="limitMakan"
-                            type="number"
-                            value={formData.limitMakan}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                limitMakan: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            className="mt-1 border-gray-200 focus:border-orange-500"
-                            placeholder="0"
-                          />
-                        ) : (
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {getUsageDisplay('makan').displayText}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Limit: {formatCurrency(formData.limitMakan)}
                             </p>
                           </div>
                         )}

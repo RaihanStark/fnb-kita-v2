@@ -90,8 +90,6 @@ export async function POST(
       status: 'active',
       limitReimbursement: {
         internet: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
-        transport: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
-        makan: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
         lainnya: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
       },
       registered: 'registered',
