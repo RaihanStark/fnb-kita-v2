@@ -43,7 +43,7 @@ export async function GET(
       nama: userData.nama || '',
       kontak: userData.kontak || '',
       posisi: userData.posisi || '',
-      gaji: userData.gaji || { perBulan: 0, perMinggu: 0, perHari: 0 },
+      gaji: userData.gaji || { amount: 0, frequency: 'monthly', perBulan: 0, perMinggu: 0, perHari: 0 },
       status: userData.status || 'active',
       limitReimbursement: userData.limitReimbursement || {
         internet: 0,
@@ -117,7 +117,7 @@ export async function PUT(
       nama: userData.nama || '',
       kontak: userData.kontak || '',
       posisi: userData.posisi || '',
-      gaji: userData.gaji || { perBulan: 0, perMinggu: 0, perHari: 0 },
+      gaji: userData.gaji || { amount: 0, frequency: 'monthly', perBulan: 0, perMinggu: 0, perHari: 0 },
       status: userData.status || 'active',
       limitReimbursement: userData.limitReimbursement || {
         internet: 0,

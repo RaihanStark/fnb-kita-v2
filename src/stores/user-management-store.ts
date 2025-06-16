@@ -12,6 +12,8 @@ export interface User {
   kontak?: string;
   posisi?: string;
   gaji?: {
+    amount: number;
+    frequency: 'daily' | 'weekly' | 'monthly';
     perBulan: number;
     perMinggu: number;
     perHari: number;

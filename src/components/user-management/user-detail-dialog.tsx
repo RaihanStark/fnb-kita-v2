@@ -38,7 +38,8 @@ export function UserDetailDialog() {
     nama: "",
     kontak: "",
     posisi: "",
-    gajiPerBulan: 0,
+    gajiAmount: 0,
+    gajiFrequency: "monthly" as "daily" | "weekly" | "monthly",
     status: "active" as "active" | "inactive" | "suspended",
     limitInternet: 0,
     limitTransport: 0,
@@ -52,7 +53,8 @@ export function UserDetailDialog() {
         nama: userDetail.nama || "",
         kontak: userDetail.kontak || "",
         posisi: userDetail.posisi || "",
-        gajiPerBulan: userDetail.gaji?.perBulan || 0,
+        gajiAmount: userDetail.gaji?.amount || 0,
+        gajiFrequency: userDetail.gaji?.frequency || "monthly",
         status: userDetail.status || "active",
         limitInternet: userDetail.limitReimbursement?.internet || 0,
         limitTransport: userDetail.limitReimbursement?.transport || 0,
@@ -62,20 +64,52 @@ export function UserDetailDialog() {
     }
   }, [userDetail]);
 
+  const calculateSalaryBreakdown = (amount: number, frequency: "daily" | "weekly" | "monthly") => {
+    let perHari: number, perMinggu: number, perBulan: number;
+    
+    switch (frequency) {
+      case 'daily':
+        perHari = amount;
+        perMinggu = Math.round(amount * 7);
+        perBulan = Math.round(amount * 30);
+        break;
+      case 'weekly':
+        perHari = Math.round(amount / 7);
+        perMinggu = amount;
+        perBulan = Math.round(amount * 4);
+        break;
+      case 'monthly':
+        perHari = Math.round(amount / 30);
+        perMinggu = Math.round(amount / 4);
+        perBulan = amount;
+        break;
+      default:
+        perHari = 0;
+        perMinggu = 0;
+        perBulan = 0;
+    }
+    
+    return { perHari, perMinggu, perBulan };
+  };
+
   const handleSave = async () => {
     if (!userDetail) return;
 
-    const gajiPerHari = Math.round(formData.gajiPerBulan / 30);
-    const gajiPerMinggu = Math.round(formData.gajiPerBulan / 4);
+    const { perHari, perMinggu, perBulan } = calculateSalaryBreakdown(
+      formData.gajiAmount,
+      formData.gajiFrequency
+    );
 
     const updates = {
       nama: formData.nama,
       kontak: formData.kontak,
       posisi: formData.posisi,
       gaji: {
-        perBulan: formData.gajiPerBulan,
-        perMinggu: gajiPerMinggu,
-        perHari: gajiPerHari,
+        amount: formData.gajiAmount,
+        frequency: formData.gajiFrequency,
+        perBulan,
+        perMinggu,
+        perHari,
       },
       status: formData.status,
       limitReimbursement: {
@@ -102,8 +136,8 @@ export function UserDetailDialog() {
 
   return (
     <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-      <DialogContent className="w-full max-w-[98vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[95vh] bg-gray-50 p-0 mx-2 sm:mx-4 flex flex-col">
-        <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[90vh] bg-gray-50 p-0 m-4 flex flex-col overflow-hidden">
+        <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
               <User className="w-6 h-6 text-white" />
@@ -274,45 +308,87 @@ export function UserDetailDialog() {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-6">Salary Information</h3>
                   
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-green-600" />
+                  <div className="space-y-4">
+                    {/* Salary Amount */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="gajiAmount" className="text-sm text-gray-600">
+                          Gaji ({formData.gajiFrequency === 'daily' ? 'per Hari' : 
+                                 formData.gajiFrequency === 'weekly' ? 'per Minggu' : 'per Bulan'})
+                        </Label>
+                        {isEditing ? (
+                          <Input
+                            id="gajiAmount"
+                            type="number"
+                            value={formData.gajiAmount}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                gajiAmount: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="Enter salary amount"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">
+                            {formatCurrency(formData.gajiAmount)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <Label htmlFor="gajiPerBulan" className="text-sm text-gray-600">Gaji per Bulan</Label>
-                      {isEditing ? (
-                        <Input
-                          id="gajiPerBulan"
-                          type="number"
-                          value={formData.gajiPerBulan}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              gajiPerBulan: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          className="mt-1 border-gray-200 focus:border-orange-500"
-                          placeholder="Enter monthly salary"
-                        />
-                      ) : (
-                        <p className="font-medium text-gray-900">
-                          {formatCurrency(formData.gajiPerBulan)}
-                        </p>
-                      )}
+
+                    {/* Payment Frequency */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="gajiFrequency" className="text-sm text-gray-600">Payment Frequency</Label>
+                        {isEditing ? (
+                          <Select
+                            value={formData.gajiFrequency}
+                            onValueChange={(value: "daily" | "weekly" | "monthly") =>
+                              setFormData({ ...formData, gajiFrequency: value })
+                            }
+                          >
+                            <SelectTrigger className="mt-1 border-gray-200 focus:border-orange-500">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="font-medium text-gray-900 capitalize">{formData.gajiFrequency}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Per Minggu</p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {formatCurrency(Math.round(formData.gajiPerBulan / 4))}
-                      </p>
-                    </div>
+                  {/* Salary Breakdown */}
+                  <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-100 mt-6">
                     <div className="text-center">
                       <p className="text-sm text-gray-600 mb-1">Per Hari</p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {formatCurrency(Math.round(formData.gajiPerBulan / 30))}
+                        {formatCurrency(calculateSalaryBreakdown(formData.gajiAmount, formData.gajiFrequency).perHari)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Per Minggu</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(calculateSalaryBreakdown(formData.gajiAmount, formData.gajiFrequency).perMinggu)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Per Bulan</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(calculateSalaryBreakdown(formData.gajiAmount, formData.gajiFrequency).perBulan)}
                       </p>
                     </div>
                   </div>
