@@ -102,7 +102,7 @@ export function UserDetailDialog() {
 
   return (
     <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-      <DialogContent className="w-full max-w-[95vw] md:max-w-2xl max-h-[90vh] bg-gray-50 p-0 mx-4 flex flex-col">
+      <DialogContent className="w-full max-w-[98vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[95vh] bg-gray-50 p-0 mx-2 sm:mx-4 flex flex-col">
         <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
