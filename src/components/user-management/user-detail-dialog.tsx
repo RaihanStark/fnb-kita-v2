@@ -102,7 +102,7 @@ export function UserDetailDialog() {
 
   return (
     <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-gray-50 p-0">
+      <DialogContent className="w-full max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-50 p-0 mx-4">
         <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -145,8 +145,8 @@ export function UserDetailDialog() {
                     )}
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
+                  <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                    <div className="flex items-center gap-3 md:col-span-2">
                       <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                         <Mail className="w-5 h-5 text-blue-600" />
                       </div>
@@ -216,7 +216,7 @@ export function UserDetailDialog() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 md:col-span-1">
                       <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
                         <Shield className="w-5 h-5 text-red-600" />
                       </div>
@@ -226,7 +226,7 @@ export function UserDetailDialog() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 md:col-span-1">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         formData.status === 'active' ? 'bg-green-100' : 
                         formData.status === 'inactive' ? 'bg-gray-100' : 'bg-red-100'
@@ -318,7 +318,7 @@ export function UserDetailDialog() {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-6">Reimbursement Limits</h3>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                         <Wifi className="w-5 h-5 text-blue-600" />
