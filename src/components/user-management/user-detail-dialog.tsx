@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, Mail, Briefcase, DollarSign, Shield } from "lucide-react";
+import { Phone, Mail, Briefcase, DollarSign, Shield, User, Wifi, Car, UtensilsCrossed, Package2, Save, X } from "lucide-react";
 
 export function UserDetailDialog() {
   const { role } = useAuthStore();
@@ -104,150 +102,179 @@ export function UserDetailDialog() {
 
   return (
     <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            User Details
-          </DialogTitle>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-gray-50 p-0">
+        <DialogHeader className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold text-white">
+                User Details
+              </DialogTitle>
+              <p className="text-white/80 text-sm mt-1">
+                {userDetail?.email}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
-        {loadingUserDetail ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-            <p className="mt-4 text-gray-500">Loading user details...</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Basic Information</h3>
-                  {role === "Manager" && !isEditing && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      Edit
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      value={userDetail.email || ""}
-                      disabled
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="nama" className="flex items-center gap-2">
-                      Nama
-                    </Label>
-                    <Input
-                      id="nama"
-                      value={formData.nama}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nama: e.target.value })
-                      }
-                      disabled={!isEditing}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="kontak" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      Kontak
-                    </Label>
-                    <Input
-                      id="kontak"
-                      value={formData.kontak}
-                      onChange={(e) =>
-                        setFormData({ ...formData, kontak: e.target.value })
-                      }
-                      disabled={!isEditing}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="posisi" className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4" />
-                      Posisi
-                    </Label>
-                    <Input
-                      id="posisi"
-                      value={formData.posisi}
-                      onChange={(e) =>
-                        setFormData({ ...formData, posisi: e.target.value })
-                      }
-                      disabled={!isEditing}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="role" className="flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Role
-                    </Label>
-                    <Input
-                      id="role"
-                      value={userDetail.role}
-                      disabled
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: "active" | "inactive" | "suspended") =>
-                        setFormData({ ...formData, status: value })
-                      }
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger id="status" className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+        <div className="p-4 space-y-4">
+          {loadingUserDetail ? (
+            <Card className="shadow-md border-0">
+              <CardContent className="p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <p className="mt-4 text-gray-500 font-medium">Loading user details...</p>
               </CardContent>
             </Card>
+          ) : (
+            <>
+              {/* Basic Information Card */}
+              <Card className="shadow-md border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                    {role === "Manager" && !isEditing && (
+                      <Button
+                        size="sm"
+                        className="bg-orange-500 hover:bg-orange-600 text-white shadow-md"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </div>
 
-            <Tabs defaultValue="salary" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="salary">Salary Information</TabsTrigger>
-                <TabsTrigger value="reimbursement">Reimbursement Limits</TabsTrigger>
-              </TabsList>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-sm text-gray-600">Email</Label>
+                        <p className="font-medium text-gray-900">{userDetail?.email}</p>
+                      </div>
+                    </div>
 
-              <TabsContent value="salary">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label
-                          htmlFor="gajiPerBulan"
-                          className="flex items-center gap-2"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          Gaji per Bulan
-                        </Label>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <User className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="nama" className="text-sm text-gray-600">Nama</Label>
+                        {isEditing ? (
+                          <Input
+                            id="nama"
+                            value={formData.nama}
+                            onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="Enter name"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">{formData.nama || "Not set"}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="kontak" className="text-sm text-gray-600">Kontak</Label>
+                        {isEditing ? (
+                          <Input
+                            id="kontak"
+                            value={formData.kontak}
+                            onChange={(e) => setFormData({ ...formData, kontak: e.target.value })}
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="Enter contact"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">{formData.kontak || "Not set"}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <Briefcase className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="posisi" className="text-sm text-gray-600">Posisi</Label>
+                        {isEditing ? (
+                          <Input
+                            id="posisi"
+                            value={formData.posisi}
+                            onChange={(e) => setFormData({ ...formData, posisi: e.target.value })}
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="Enter position"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">{formData.posisi || "Not set"}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-sm text-gray-600">Role</Label>
+                        <p className="font-medium text-gray-900">{userDetail?.role}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        formData.status === 'active' ? 'bg-green-100' : 
+                        formData.status === 'inactive' ? 'bg-gray-100' : 'bg-red-100'
+                      }`}>
+                        <div className={`w-3 h-3 rounded-full ${
+                          formData.status === 'active' ? 'bg-green-500' : 
+                          formData.status === 'inactive' ? 'bg-gray-500' : 'bg-red-500'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="status" className="text-sm text-gray-600">Status</Label>
+                        {isEditing ? (
+                          <Select
+                            value={formData.status}
+                            onValueChange={(value: "active" | "inactive" | "suspended") =>
+                              setFormData({ ...formData, status: value })
+                            }
+                          >
+                            <SelectTrigger className="mt-1 border-gray-200 focus:border-orange-500">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="suspended">Suspended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="font-medium text-gray-900 capitalize">{formData.status}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Salary Information Card */}
+              <Card className="shadow-md border-0">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Salary Information</h3>
+                  
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor="gajiPerBulan" className="text-sm text-gray-600">Gaji per Bulan</Label>
+                      {isEditing ? (
                         <Input
                           id="gajiPerBulan"
                           type="number"
@@ -258,161 +285,190 @@ export function UserDetailDialog() {
                               gajiPerBulan: parseInt(e.target.value) || 0,
                             })
                           }
-                          disabled={!isEditing}
-                          className="mt-1"
+                          className="mt-1 border-gray-200 focus:border-orange-500"
+                          placeholder="Enter monthly salary"
                         />
-                        {!isEditing && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            {formatCurrency(formData.gajiPerBulan)}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Gaji per Minggu</Label>
-                          <p className="text-lg font-medium mt-1">
-                            {formatCurrency(Math.round(formData.gajiPerBulan / 4))}
-                          </p>
-                        </div>
-                        <div>
-                          <Label>Gaji per Hari</Label>
-                          <p className="text-lg font-medium mt-1">
-                            {formatCurrency(Math.round(formData.gajiPerBulan / 30))}
-                          </p>
-                        </div>
-                      </div>
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {formatCurrency(formData.gajiPerBulan)}
+                        </p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </div>
 
-              <TabsContent value="reimbursement">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="limitInternet">Limit Internet</Label>
-                        <Input
-                          id="limitInternet"
-                          type="number"
-                          value={formData.limitInternet}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              limitInternet: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          disabled={!isEditing}
-                          className="mt-1"
-                        />
-                        {!isEditing && (
-                          <p className="text-sm text-gray-500 mt-1">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Per Minggu</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(Math.round(formData.gajiPerBulan / 4))}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Per Hari</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(Math.round(formData.gajiPerBulan / 30))}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Reimbursement Limits Card */}
+              <Card className="shadow-md border-0">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Reimbursement Limits</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <Wifi className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="limitInternet" className="text-sm text-gray-600">Internet</Label>
+                        {isEditing ? (
+                          <Input
+                            id="limitInternet"
+                            type="number"
+                            value={formData.limitInternet}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                limitInternet: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="0"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">
                             {formatCurrency(formData.limitInternet)}
                           </p>
                         )}
                       </div>
+                    </div>
 
-                      <div>
-                        <Label htmlFor="limitTransport">Limit Transport</Label>
-                        <Input
-                          id="limitTransport"
-                          type="number"
-                          value={formData.limitTransport}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              limitTransport: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          disabled={!isEditing}
-                          className="mt-1"
-                        />
-                        {!isEditing && (
-                          <p className="text-sm text-gray-500 mt-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Car className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="limitTransport" className="text-sm text-gray-600">Transport</Label>
+                        {isEditing ? (
+                          <Input
+                            id="limitTransport"
+                            type="number"
+                            value={formData.limitTransport}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                limitTransport: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="0"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">
                             {formatCurrency(formData.limitTransport)}
                           </p>
                         )}
                       </div>
+                    </div>
 
-                      <div>
-                        <Label htmlFor="limitMakan">Limit Makan</Label>
-                        <Input
-                          id="limitMakan"
-                          type="number"
-                          value={formData.limitMakan}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              limitMakan: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          disabled={!isEditing}
-                          className="mt-1"
-                        />
-                        {!isEditing && (
-                          <p className="text-sm text-gray-500 mt-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <UtensilsCrossed className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="limitMakan" className="text-sm text-gray-600">Makan</Label>
+                        {isEditing ? (
+                          <Input
+                            id="limitMakan"
+                            type="number"
+                            value={formData.limitMakan}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                limitMakan: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="0"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">
                             {formatCurrency(formData.limitMakan)}
                           </p>
                         )}
                       </div>
+                    </div>
 
-                      <div>
-                        <Label htmlFor="limitLainnya">Limit Lainnya</Label>
-                        <Input
-                          id="limitLainnya"
-                          type="number"
-                          value={formData.limitLainnya}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              limitLainnya: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          disabled={!isEditing}
-                          className="mt-1"
-                        />
-                        {!isEditing && (
-                          <p className="text-sm text-gray-500 mt-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <Package2 className="w-5 h-5 text-gray-600" />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="limitLainnya" className="text-sm text-gray-600">Lainnya</Label>
+                        {isEditing ? (
+                          <Input
+                            id="limitLainnya"
+                            type="number"
+                            value={formData.limitLainnya}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                limitLainnya: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="mt-1 border-gray-200 focus:border-orange-500"
+                            placeholder="0"
+                          />
+                        ) : (
+                          <p className="font-medium text-gray-900">
                             {formatCurrency(formData.limitLainnya)}
                           </p>
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+                  </div>
+                </CardContent>
+              </Card>
 
-        <DialogFooter>
-          {isEditing ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-                disabled={updatingUserDetail}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={updatingUserDetail}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                {updatingUserDetail ? "Saving..." : "Save Changes"}
-              </Button>
+              {/* Action Buttons */}
+              {isEditing && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    disabled={updatingUserDetail}
+                    className="border-gray-300 hover:bg-gray-50"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={updatingUserDetail}
+                    className="bg-orange-500 hover:bg-orange-600 text-white shadow-md"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {updatingUserDetail ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+
+              {!isEditing && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetailDialog(false)}
+                  className="w-full border-gray-300 hover:bg-gray-50"
+                >
+                  Close
+                </Button>
+              )}
             </>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => setShowUserDetailDialog(false)}
-            >
-              Close
-            </Button>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
