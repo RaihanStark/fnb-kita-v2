@@ -2,69 +2,34 @@
 
 import useAuthStore from '@/stores/auth-store'
 import { AppLayout } from '@/components/layout/app-layout'
-import { ChangePasswordForm } from '@/components/auth/change-password-form'
-import { LogoutButton } from '@/components/auth/logout-button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   User, 
   ChefHat, 
-  Users, 
   FileText, 
   Package, 
   Clock,
-  Settings,
-  ChevronRight,
-  Lock,
-  DollarSign
+  Settings
 } from 'lucide-react'
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user)
-  const role = useAuthStore((state) => state.role)
   const router = useRouter()
-  const [showChangePassword, setShowChangePassword] = useState(false)
 
   const managerFeatures = [
-    { icon: Users, label: 'User Management', color: 'bg-blue-100 text-blue-600', href: '/dashboard/users' },
-    { icon: DollarSign, label: 'Reimbursements', color: 'bg-green-100 text-green-600', href: '/reimbursements' },
     { icon: FileText, label: 'Reports', color: 'bg-purple-100 text-purple-600', href: '' },
     { icon: Package, label: 'Inventory', color: 'bg-orange-100 text-orange-600', href: '' },
+    { icon: Settings, label: 'Settings', color: 'bg-gray-100 text-gray-600', href: '/settings' },
   ]
 
   const employeeFeatures = [
     { icon: Clock, label: 'Clock In/Out', color: 'bg-blue-100 text-blue-600', href: '' },
-    { icon: DollarSign, label: 'Reimbursements', color: 'bg-green-100 text-green-600', href: '/reimbursements' },
     { icon: Package, label: 'Orders', color: 'bg-purple-100 text-purple-600', href: '' },
-    { icon: Settings, label: 'Settings', color: 'bg-orange-100 text-orange-600', href: '' },
+    { icon: Settings, label: 'Settings', color: 'bg-orange-100 text-orange-600', href: '/settings' },
   ]
 
-  const features = role === 'Manager' ? managerFeatures : employeeFeatures
-
-  if (showChangePassword) {
-    return (
-      <AppLayout title="Change Password" hideBottomNav>
-        <div className="p-4">
-          <div className="mb-4">
-            <Button 
-              onClick={() => setShowChangePassword(false)}
-              variant="ghost"
-              size="sm"
-            >
-              ← Back to Dashboard
-            </Button>
-          </div>
-          <ChangePasswordForm 
-            onSuccess={() => {
-              setShowChangePassword(false)
-            }}
-          />
-        </div>
-      </AppLayout>
-    )
-  }
+  const features = user?.role === 'Manager' ? managerFeatures : employeeFeatures
 
   return (
     <AppLayout>
@@ -80,7 +45,7 @@ export default function DashboardPage() {
                 <p className="text-white/90 text-sm font-medium">Welcome back</p>
                 <p className="text-white text-lg font-semibold mt-1">{user?.email}</p>
                 <p className="text-white/80 text-sm mt-0.5 capitalize">
-                  {role || 'No role assigned'}
+                  {user?.role || 'No role assigned'}
                 </p>
               </div>
             </div>
@@ -89,7 +54,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Material Design Quick Actions */}
-      <div className="px-4">
+      <div className="px-4 pb-4">
         <h2 className="text-xl font-medium text-gray-900 mb-6">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-4">
           {features.map((feature, index) => {
@@ -109,31 +74,6 @@ export default function DashboardPage() {
               </Card>
             )
           })}
-        </div>
-
-        {/* Material Design Settings Section */}
-        <div className="mt-8 pb-4">
-          <h2 className="text-xl font-medium text-gray-900 mb-6">Account Settings</h2>
-          <Card className="shadow-md border-0">
-            <CardContent className="p-0">
-              <Button
-                onClick={() => setShowChangePassword(true)}
-                variant="ghost"
-                className="w-full h-auto flex items-center justify-between p-6 hover:bg-gray-50 transition-colors rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 text-base">Change Password</p>
-                    <p className="text-sm text-gray-500 mt-1">Update your account password</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </AppLayout>

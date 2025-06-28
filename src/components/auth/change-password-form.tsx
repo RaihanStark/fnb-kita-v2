@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
-import { changePassword } from "@/lib/firebase/auth-client"
+import { authApi } from "@/lib/api/auth"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card"
 
 const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
@@ -44,6 +45,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
+      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -54,20 +56,22 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
     setError(null)
     setSuccess(false)
 
-    const { error } = await changePassword(values.newPassword)
-
-    if (error) {
-      setError(error)
+    try {
+      await authApi.changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      })
+      
+      setSuccess(true)
+      form.reset()
+      
+      if (onSuccess) {
+        onSuccess()
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to change password")
+    } finally {
       setIsLoading(false)
-      return
-    }
-
-    setSuccess(true)
-    form.reset()
-    setIsLoading(false)
-
-    if (onSuccess) {
-      onSuccess()
     }
   }
 
@@ -76,6 +80,24 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="currentPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">Current Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Enter current password"
+                      className="h-12 text-base rounded-xl border-gray-200 focus:border-primary"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="newPassword"
@@ -117,7 +139,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
             )}
             {success && (
               <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
-                Password changed successfully!
+                Password changed successfully! Please login again.
               </div>
             )}
             <Button 

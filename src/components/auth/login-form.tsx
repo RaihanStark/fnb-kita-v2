@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
-import { signIn } from "@/lib/firebase/auth-client"
+import useAuthStore from "@/stores/auth-store"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +36,7 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const login = useAuthStore((state) => state.login)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -49,19 +50,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     setIsLoading(true)
     setError(null)
 
-    const { user, error } = await signIn(values.email, values.password)
-
-    if (error) {
-      setError(error)
+    try {
+      await login(values.email, values.password)
+      if (onSuccess) {
+        onSuccess()
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to sign in")
+    } finally {
       setIsLoading(false)
-      return
     }
-
-    if (user && onSuccess) {
-      onSuccess()
-    }
-
-    setIsLoading(false)
   }
 
   return (

@@ -22,13 +22,13 @@ export function LogoutButton({
   redirectTo = "/login"
 }: LogoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const signOut = useAuthStore((state) => state.signOut)
+  const logout = useAuthStore((state) => state.logout)
   const router = useRouter()
 
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      await signOut()
+      await logout()
       router.push(redirectTo)
     } catch (error) {
       console.error('Error signing out:', error)

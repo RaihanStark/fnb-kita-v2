@@ -1,7 +1,7 @@
 "use client"
 
 import { ComponentType } from 'react'
-import { UserRole } from '@/lib/firebase/auth-service'
+import { UserRole } from '@/stores/auth-store'
 import { ProtectedRoute } from './protected-route'
 
 export function withRole<P extends object>(
