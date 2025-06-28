@@ -1,4 +1,4 @@
-import { adminAuth } from './admin';
+import { getAdminAuth } from './admin';
 
 export type UserRole = 'Manager' | 'Employee';
 
@@ -8,7 +8,7 @@ export interface CustomClaims {
 
 export async function setUserRole(uid: string, role: UserRole) {
   try {
-    await adminAuth.setCustomUserClaims(uid, { role });
+    await getAdminAuth().setCustomUserClaims(uid, { role });
     return true;
   } catch (error) {
     console.error('Error setting user role:', error);
@@ -18,7 +18,7 @@ export async function setUserRole(uid: string, role: UserRole) {
 
 export async function getUserRole(uid: string): Promise<UserRole | null> {
   try {
-    const user = await adminAuth.getUser(uid);
+    const user = await getAdminAuth().getUser(uid);
     const claims = user.customClaims as CustomClaims | undefined;
     return claims?.role || null;
   } catch (error) {
@@ -29,7 +29,7 @@ export async function getUserRole(uid: string): Promise<UserRole | null> {
 
 export async function verifyIdToken(idToken: string) {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying ID token:', error);

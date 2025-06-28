@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/firebase/admin'
+import { getAdminAuth } from '@/lib/firebase/admin'
 import { getUserRole } from '@/lib/firebase/auth-service'
 
 // TEST ENDPOINT ONLY - DO NOT USE IN PRODUCTION
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user by email
-    const user = await adminAuth.getUserByEmail(email)
+    const user = await getAdminAuth().getUserByEmail(email)
     
     if (!user) {
       return NextResponse.json(

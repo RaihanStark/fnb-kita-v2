@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase/admin';
+import { getAdminAuth } from '@/lib/firebase/admin';
 
 export async function PATCH(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function PATCH(
     const token = authHeader.split('Bearer ')[1];
     
     // Verify the token and check if user is a Manager
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     
     if (decodedToken.role !== 'Manager') {
       return NextResponse.json({ error: 'Forbidden: Manager access required' }, { status: 403 });
@@ -37,7 +37,7 @@ export async function PATCH(
 
     // Check if this would remove the last manager
     if (role === 'Employee') {
-      const listUsersResult = await adminAuth.listUsers(1000);
+      const listUsersResult = await getAdminAuth().listUsers(1000);
       const managers = listUsersResult.users.filter(
         user => user.customClaims?.role === 'Manager' && user.uid !== userId
       );
@@ -51,10 +51,10 @@ export async function PATCH(
     }
 
     // Update the user's custom claims
-    await adminAuth.setCustomUserClaims(userId, { role });
+    await getAdminAuth().setCustomUserClaims(userId, { role });
 
     // Get updated user data
-    const updatedUser = await adminAuth.getUser(userId);
+    const updatedUser = await getAdminAuth().getUser(userId);
 
     return NextResponse.json({
       success: true,
