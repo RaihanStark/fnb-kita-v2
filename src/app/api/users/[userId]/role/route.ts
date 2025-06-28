@@ -1,74 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth } from '@/lib/firebase/admin';
+import { authenticateUser } from '@/lib/auth/middleware';
+import { UserService } from '@/lib/services/user.service';
+import { z } from 'zod';
+
+const roleSchema = z.object({
+  role: z.enum(['Manager', 'Employee']),
+});
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const { userId } = await params;
+  
   try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Authenticate user
+    const tokenPayload = await authenticateUser(request);
+    
+    if (!tokenPayload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.split('Bearer ')[1];
-    
-    // Verify the token and check if user is a Manager
-    const decodedToken = await getAdminAuth().verifyIdToken(token);
-    
-    if (decodedToken.role !== 'Manager') {
+    // Check if user is a Manager
+    if (tokenPayload.role !== 'Manager') {
       return NextResponse.json({ error: 'Forbidden: Manager access required' }, { status: 403 });
     }
 
     // Prevent managers from changing their own role
-    if (decodedToken.uid === userId) {
+    if (tokenPayload.userId === userId) {
       return NextResponse.json({ error: 'Managers cannot change their own role' }, { status: 400 });
     }
 
-    // Get the new role from request body
+    // Parse and validate request body
     const body = await request.json();
-    const { role } = body;
+    const { role } = roleSchema.parse(body);
 
-    if (!role || !['Manager', 'Employee'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role. Must be Manager or Employee' }, { status: 400 });
-    }
+    // Update user role
+    await UserService.updateUserRole(userId, role);
 
-    // Check if this would remove the last manager
-    if (role === 'Employee') {
-      const listUsersResult = await getAdminAuth().listUsers(1000);
-      const managers = listUsersResult.users.filter(
-        user => user.customClaims?.role === 'Manager' && user.uid !== userId
-      );
-
-      if (managers.length === 0) {
-        return NextResponse.json(
-          { error: 'Cannot change role: This would remove the last manager' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Update the user's custom claims
-    await getAdminAuth().setCustomUserClaims(userId, { role });
-
-    // Get updated user data
-    const updatedUser = await getAdminAuth().getUser(userId);
+    // Get updated user
+    const updatedUser = await UserService.getUserById(userId);
 
     return NextResponse.json({
       success: true,
-      user: {
-        uid: updatedUser.uid,
-        email: updatedUser.email,
-        displayName: updatedUser.displayName,
-        role: updatedUser.customClaims?.role || 'Employee',
-        lastLogin: updatedUser.metadata.lastSignInTime,
-        createdAt: updatedUser.metadata.creationTime,
-      },
+      user: updatedUser,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating user role:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

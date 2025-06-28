@@ -1,42 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
-import { Timestamp } from 'firebase-admin/firestore';
+import { authenticateUser } from '@/lib/auth/middleware';
+import { ReimbursementService } from '@/lib/services/reimbursement.service';
+import { z } from 'zod';
+
+// Update status schema
+const updateStatusSchema = z.object({
+  status: z.enum(['approved', 'denied', 'paid']),
+  managerComments: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Authenticate user
+    const tokenPayload = await authenticateUser(request);
+    
+    if (!tokenPayload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await getAdminAuth().verifyIdToken(token);
-    const userId = decodedToken.uid;
-    const userRole = decodedToken.role || 'Employee';
+    // Get reimbursement
+    const reimbursement = await ReimbursementService.getById(params.id);
 
-    const doc = await getAdminDb().collection('reimbursements').doc(params.id).get();
-
-    if (!doc.exists) {
+    if (!reimbursement) {
       return NextResponse.json({ error: 'Reimbursement not found' }, { status: 404 });
     }
 
-    const data = doc.data()!;
-
     // Check authorization: employees can only view their own reimbursements
-    if (userRole === 'Employee' && data.employeeId !== userId) {
+    if (tokenPayload.role === 'Employee' && reimbursement.employeeId !== tokenPayload.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    return NextResponse.json({
-      id: doc.id,
-      ...data,
-      submittedDate: data.submittedDate?.toDate?.() || new Date(),
-      processedDate: data.processedDate?.toDate?.(),
-      paidDate: data.paidDate?.toDate?.()
-    });
+    return NextResponse.json(reimbursement);
   } catch (error) {
     console.error('Error fetching reimbursement:', error);
     return NextResponse.json(
@@ -51,97 +48,46 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Authenticate user
+    const tokenPayload = await authenticateUser(request);
+    
+    if (!tokenPayload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await getAdminAuth().verifyIdToken(token);
-    const userId = decodedToken.uid;
-    const userRole = decodedToken.role || 'Employee';
-
     // Only managers can update reimbursement status
-    if (userRole !== 'Manager') {
+    if (tokenPayload.role !== 'Manager') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { status, managerComments } = body;
+    
+    // Validate input
+    const { status, managerComments } = updateStatusSchema.parse(body);
 
-    // Validate status
-    if (!status || !['approved', 'denied', 'paid'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
-    }
-
-    // Check if reimbursement exists
-    const docRef = getAdminDb().collection('reimbursements').doc(params.id);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      return NextResponse.json({ error: 'Reimbursement not found' }, { status: 404 });
-    }
-
-    const currentData = doc.data()!;
-
-    // Validate status transitions
-    if (status === 'paid' && currentData.status !== 'approved') {
-      return NextResponse.json(
-        { error: 'Can only mark approved reimbursements as paid' },
-        { status: 400 }
-      );
-    }
-
-    // Handle personal expense limit adjustments when denying
-    if (status === 'denied' && currentData.expenseType === 'personal' && currentData.status === 'pending') {
-      const userDoc = await getAdminDb().collection('users').doc(currentData.employeeId).get();
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        const limitReimbursement = userData?.limitReimbursement || {};
-        
-        if (limitReimbursement[currentData.category]) {
-          const categoryLimit = limitReimbursement[currentData.category];
-          const currentUsage = categoryLimit.usage || 0;
-          const reimbursementAmount = currentData.amount || 0;
-          
-          // Subtract the amount from usage since it was denied
-          const newUsage = Math.max(0, currentUsage - reimbursementAmount);
-          limitReimbursement[currentData.category] = {
-            ...categoryLimit,
-            usage: newUsage
-          };
-
-          // Update user document
-          await getAdminDb().collection('users').doc(currentData.employeeId).update({
-            limitReimbursement
-          });
-        }
-      }
-    }
-
-    // Update reimbursement
-    const updateData: Record<string, any> = {
+    // Update reimbursement status
+    await ReimbursementService.updateStatus(
+      params.id,
       status,
-      processedBy: userId,
-      processedDate: Timestamp.now()
-    };
-
-    if (managerComments) {
-      updateData.managerComments = managerComments;
-    }
-
-    if (status === 'paid') {
-      updateData.paidDate = Timestamp.now();
-    }
-
-    await docRef.update(updateData);
+      tokenPayload.userId,
+      managerComments
+    );
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating reimbursement:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error.message === 'Reimbursement not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update reimbursement' },
       { status: 500 }

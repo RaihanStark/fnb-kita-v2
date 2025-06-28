@@ -1,30 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, getAdminDb, getAdminStorage } from '@/lib/firebase/admin';
+import { authenticateUser } from '@/lib/auth/middleware';
+import { ReimbursementService } from '@/lib/services/reimbursement.service';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    // Authenticate user
+    const tokenPayload = await authenticateUser(request);
+    
+    if (!tokenPayload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await getAdminAuth().verifyIdToken(token);
-    const userId = decodedToken.uid;
-
     // Check if reimbursement exists and belongs to user
-    const docRef = getAdminDb().collection('reimbursements').doc(params.id);
-    const doc = await docRef.get();
+    const reimbursement = await ReimbursementService.getById(params.id);
 
-    if (!doc.exists) {
+    if (!reimbursement) {
       return NextResponse.json({ error: 'Reimbursement not found' }, { status: 404 });
     }
 
-    const data = doc.data()!;
-    if (data.employeeId !== userId) {
+    if (reimbursement.employeeId !== tokenPayload.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -54,32 +51,17 @@ export async function POST(
       );
     }
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Upload to Firebase Storage
-    const fileName = `receipts/${params.id}/${Date.now()}_${file.name}`;
-    const bucket = getAdminStorage().bucket();
-    const fileRef = bucket.file(fileName);
-
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-      },
-    });
-
-    // Make file publicly accessible
-    await fileRef.makePublic();
-
-    // Get public URL
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
+    // TODO: Implement file storage solution (e.g., AWS S3, Cloudinary, etc.)
+    // For now, we'll use a placeholder URL
+    const placeholderUrl = `https://placeholder.com/receipts/${params.id}/${Date.now()}_${file.name}`;
+    
     // Update reimbursement with receipt URL
-    await docRef.update({
-      receiptUrl: publicUrl
-    });
+    await ReimbursementService.updateReceiptUrl(params.id, placeholderUrl);
 
-    return NextResponse.json({ url: publicUrl });
+    return NextResponse.json({ 
+      url: placeholderUrl,
+      message: 'Receipt upload functionality needs to be implemented with a storage solution'
+    });
   } catch (error) {
     console.error('Error uploading receipt:', error);
     return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { UserRole } from '@/lib/firebase/auth-service'
+import { UserRole } from '@/stores/auth-store'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { BottomNavigation } from '@/components/ui/bottom-navigation'
 import { Button } from '@/components/ui/button'

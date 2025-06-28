@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
+import { UserService } from '@/lib/services/user.service';
+import { AuthService } from '@/lib/services/auth.service';
+import { z } from 'zod';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, cookieOptions } from '@/lib/auth/config';
+
+const acceptInvitationSchema = z.object({
+  password: z.string().min(6),
+});
 
 export async function POST(
   request: NextRequest,
@@ -7,111 +14,56 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    const { password } = await request.json();
+    const body = await request.json();
 
-    if (!token || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!token) {
+      return NextResponse.json({ error: 'Invalid invitation token' }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
-    }
+    // Validate input
+    const { password } = acceptInvitationSchema.parse(body);
 
-    const db = getAdminDb();
-    const adminAuth = getAdminAuth();
-    
-    // Find invitation by token
-    const invitationsRef = db.collection('invitations');
-    const invitationQuery = await invitationsRef.where('invitationToken', '==', token).get();
+    // Accept invitation and create user
+    const newUser = await UserService.acceptInvitation(token, password);
 
-    if (invitationQuery.empty) {
-      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 });
-    }
+    // Generate tokens for automatic login
+    const { accessToken, refreshToken } = await AuthService.login(newUser.email, password);
 
-    const invitationDoc = invitationQuery.docs[0];
-    const invitationData = invitationDoc.data();
-
-    // Check if invitation is still pending
-    if (invitationData.status !== 'pending') {
-      return NextResponse.json({ error: 'Invitation is no longer valid' }, { status: 400 });
-    }
-
-    // Check if invitation has expired
-    const expiryDate = new Date(invitationData.invitationExpiry);
-    const now = new Date();
-
-    if (now > expiryDate) {
-      await invitationDoc.ref.update({
-        status: 'expired',
-        expiredAt: now.toISOString(),
-      });
-      
-      return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
-    }
-
-    // Check if user already exists (shouldn't happen, but let's be safe)
-    try {
-      const existingUser = await adminAuth.getUserByEmail(invitationData.email);
-      if (existingUser) {
-        return NextResponse.json({ error: 'User already exists' }, { status: 409 });
-      }
-    } catch (error: any) {
-      // User doesn't exist, which is what we want
-      if (error.code !== 'auth/user-not-found') {
-        throw error;
-      }
-    }
-
-    // Create Firebase user using the full name from invitation
-    const userRecord = await adminAuth.createUser({
-      email: invitationData.email,
-      password,
-      displayName: invitationData.fullName,
-      emailVerified: true, // Since they're invited, we trust the email
-    });
-
-    // Set custom claims for role
-    await adminAuth.setCustomUserClaims(userRecord.uid, {
-      role: invitationData.role
-    });
-
-    // Create user document in Firestore with default values using full name from invitation
-    const userData = {
-      nama: invitationData.fullName,
-      kontak: '',
-      posisi: '',
-      gaji: {
-        amount: 0,
-        frequency: 'monthly',
-        perBulan: 0,
-        perMinggu: 0,
-        perHari: 0
-      },
-      status: 'active',
-      limitReimbursement: {
-        internet: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
-        lainnya: { limit: 0, usage: 0, lastReset: new Date().toISOString() },
-      },
-      registered: 'registered',
-      registeredAt: new Date().toISOString(),
-    };
-
-    await db.collection('users').doc(userRecord.uid).set(userData);
-
-    // Update invitation status
-    await invitationDoc.ref.update({
-      status: 'accepted',
-      acceptedAt: now.toISOString(),
-      userId: userRecord.uid,
-    });
-
-    return NextResponse.json({ 
+    // Create response
+    const response = NextResponse.json({ 
       message: 'Registration completed successfully',
-      userId: userRecord.uid
+      user: newUser,
     });
 
-  } catch (error) {
+    // Set cookies for automatic login
+    response.cookies.set(ACCESS_TOKEN_COOKIE, accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60, // 15 minutes
+    });
+
+    response.cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    });
+
+    return response;
+
+  } catch (error: any) {
     console.error('Error accepting invitation:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error.message === 'Invalid invitation' || 
+        error.message === 'Invitation has already been used' ||
+        error.message === 'Invitation has expired') {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
