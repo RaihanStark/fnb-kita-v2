@@ -18,11 +18,8 @@ async function seed() {
     const [manager] = await db.insert(users).values({
       email: 'manager@test.com',
       passwordHash: managerPassword,
-      nama: 'Test Manager',
-      displayName: 'Test Manager',
+      name: 'Test Manager',
       role: 'Manager',
-      status: 'active',
-      registrationStatus: 'registered',
     }).returning();
 
     console.log('✅ Created manager:', manager.email);
@@ -32,11 +29,8 @@ async function seed() {
     const [employee] = await db.insert(users).values({
       email: 'employee@test.com',
       passwordHash: employeePassword,
-      nama: 'Test Employee',
-      displayName: 'Test Employee',
+      name: 'Test Employee',
       role: 'Employee',
-      status: 'active',
-      registrationStatus: 'registered',
     }).returning();
 
     console.log('✅ Created employee:', employee.email);

@@ -10,7 +10,7 @@ export class AuthService {
   static async register(data: {
     email: string;
     password: string;
-    nama: string;
+    name: string;
     role?: 'Manager' | 'Employee';
   }): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     // Check if user already exists
@@ -30,8 +30,7 @@ export class AuthService {
     const [newUser] = await getDb().insert(users).values({
       email: data.email,
       passwordHash,
-      nama: data.nama,
-      displayName: data.nama,
+      name: data.name,
       role: data.role || 'Employee',
     }).returning();
 
