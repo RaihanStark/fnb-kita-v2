@@ -62,11 +62,6 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Check if user is active
-    if (user.status !== 'active') {
-      throw new Error('Account is not active');
-    }
-
     // Generate tokens
     const { accessToken, refreshToken } = await this.createSession(user);
 
