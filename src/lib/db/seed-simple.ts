@@ -37,11 +37,6 @@ async function seed() {
       role: 'Employee',
       status: 'active',
       registrationStatus: 'registered',
-      limitReimbursement: {
-        makan: { limit: 500000, digunakan: 0 },
-        transport: { limit: 300000, digunakan: 0 },
-        internet: { limit: 200000, digunakan: 0 },
-      },
     }).returning();
 
     console.log('✅ Created employee:', employee.email);

@@ -31,9 +31,6 @@ export const users = pgTable('users', {
   salaryAmount: decimal('salary_amount', { precision: 12, scale: 2 }),
   salaryFrequency: salaryFrequencyEnum('salary_frequency').default('monthly'),
   
-  // Reimbursement limits (stored as JSONB)
-  // Format: { makan: { limit: 500000, digunakan: 100000 }, transport: { limit: 300000, digunakan: 50000 } }
-  limitReimbursement: jsonb('limit_reimbursement').$type<Record<string, { limit: number; digunakan: number }>>(),
   
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -55,8 +52,3 @@ export const insertUserSchema = createInsertSchema(users, {
 
 export const selectUserSchema = createSelectSchema(users);
 
-// Helper type for limit reimbursement
-export type LimitReimbursement = Record<string, {
-  limit: number;
-  digunakan: number;
-}>;
