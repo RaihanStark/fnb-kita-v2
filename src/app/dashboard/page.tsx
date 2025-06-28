@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation'
 import { 
   User, 
   ChefHat, 
-  Users, 
   FileText, 
   Package, 
   Clock,
@@ -23,12 +22,10 @@ import {
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user)
-  const role = useAuthStore((state) => state.role)
   const router = useRouter()
   const [showChangePassword, setShowChangePassword] = useState(false)
 
   const managerFeatures = [
-    { icon: Users, label: 'User Management', color: 'bg-blue-100 text-blue-600', href: '/dashboard/users' },
     { icon: DollarSign, label: 'Reimbursements', color: 'bg-green-100 text-green-600', href: '/reimbursements' },
     { icon: FileText, label: 'Reports', color: 'bg-purple-100 text-purple-600', href: '' },
     { icon: Package, label: 'Inventory', color: 'bg-orange-100 text-orange-600', href: '' },
@@ -41,7 +38,7 @@ export default function DashboardPage() {
     { icon: Settings, label: 'Settings', color: 'bg-orange-100 text-orange-600', href: '' },
   ]
 
-  const features = role === 'Manager' ? managerFeatures : employeeFeatures
+  const features = user?.role === 'Manager' ? managerFeatures : employeeFeatures
 
   if (showChangePassword) {
     return (
@@ -80,7 +77,7 @@ export default function DashboardPage() {
                 <p className="text-white/90 text-sm font-medium">Welcome back</p>
                 <p className="text-white text-lg font-semibold mt-1">{user?.email}</p>
                 <p className="text-white/80 text-sm mt-0.5 capitalize">
-                  {role || 'No role assigned'}
+                  {user?.role || 'No role assigned'}
                 </p>
               </div>
             </div>

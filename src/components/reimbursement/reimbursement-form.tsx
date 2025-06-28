@@ -26,7 +26,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import useAuthStore from "@/stores/auth-store";
 import useReimbursementStore from "@/stores/reimbursement-store";
-import { useUserManagementStore, User } from "@/stores/user-management-store";
 import { Upload } from "lucide-react";
 import { getAuth } from "firebase/auth";
 
@@ -43,11 +42,9 @@ export function ReimbursementForm() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { submitReimbursement } = useReimbursementStore();
-  const { fetchUserDetail, userDetail } = useUserManagementStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -59,19 +56,6 @@ export function ReimbursementForm() {
     },
   });
 
-  // Fetch current user details on mount
-  useEffect(() => {
-    if (user?.uid) {
-      fetchUserDetail(user.uid);
-    }
-  }, [user?.uid, fetchUserDetail]);
-
-  // Update local user state when userDetail changes
-  useEffect(() => {
-    if (userDetail) {
-      setCurrentUser(userDetail);
-    }
-  }, [userDetail]);
 
   // Watch expense type to reset category when switching
   const expenseType = form.watch('expenseType');
@@ -81,10 +65,8 @@ export function ReimbursementForm() {
 
   // Get available categories based on expense type
   const getAvailableCategories = () => {
-    if (expenseType === 'personal' && currentUser?.limitReimbursement) {
-      return Object.keys(currentUser.limitReimbursement);
-    }
-    return []; // For business expenses, we'll use a text input instead
+    // Since user management is removed, return empty array for now
+    return [];
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,15 +222,6 @@ export function ReimbursementForm() {
                   </FormControl>
                 )}
                 <FormMessage />
-                {expenseType === 'personal' && currentUser?.limitReimbursement && field.value && (
-                  <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-800">
-                      <span className="font-medium">Current usage:</span> {' '}
-                      Rp {currentUser.limitReimbursement[field.value]?.usage?.toLocaleString('id-ID') || 0} / {' '}
-                      Rp {currentUser.limitReimbursement[field.value]?.limit?.toLocaleString('id-ID') || 0}
-                    </p>
-                  </div>
-                )}
               </FormItem>
             )}
           />
