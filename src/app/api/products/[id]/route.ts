@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, products } from '@/lib/db'
+import { getDb, products, stocks } from '@/lib/db'
 import { authenticateUser } from '@/lib/auth/middleware'
 import { eq, and, ne } from 'drizzle-orm'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const user = await authenticateUser(request)
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -17,7 +18,7 @@ export async function GET(
     const [product] = await db
       .select()
       .from(products)
-      .where(eq(products.id, params.id))
+      .where(eq(products.id, id))
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
@@ -32,8 +33,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const user = await authenticateUser(request)
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -61,15 +63,25 @@ export async function PUT(
       .where(and(
         eq(products.name, name),
         eq(products.variant, variant),
-        ne(products.id, params.id)
+        ne(products.id, id)
       ))
 
     if (existing.length > 0) {
       return NextResponse.json({ error: 'Produk dengan varian ini sudah ada' }, { status: 409 })
     }
 
+    // Get the old product name for stock update
+    const [oldProduct] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+
+    if (!oldProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
     // Update product
-    const [product] = await db
+    const [updatedProduct] = await db
       .update(products)
       .set({
         name,
@@ -78,14 +90,29 @@ export async function PUT(
         isActive,
         updatedAt: new Date()
       })
-      .where(eq(products.id, params.id))
+      .where(eq(products.id, id))
       .returning()
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    if (!updatedProduct) {
+      return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
     }
 
-    return NextResponse.json(product)
+    // Update corresponding stock entry if name or variant changed
+    const oldStockName = `${oldProduct.name} - ${oldProduct.variant}`
+    const newStockName = `${name} - ${variant}`
+    
+    if (oldStockName !== newStockName || oldProduct.price !== String(price)) {
+      await db
+        .update(stocks)
+        .set({
+          name: newStockName,
+          costPerUnit: String(price),
+          updatedAt: new Date()
+        })
+        .where(eq(stocks.name, oldStockName))
+    }
+
+    return NextResponse.json(updatedProduct)
   } catch (error) {
     console.error('Error updating product:', error)
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
@@ -94,8 +121,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const user = await authenticateUser(request)
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -109,19 +137,30 @@ export async function DELETE(
   try {
     const db = getDb()
     
+    // Get product details first
+    const [productToDelete] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+
+    if (!productToDelete) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
     // Instead of deleting, we'll set isActive to false
-    const [product] = await db
+    await db
       .update(products)
       .set({
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(products.id, params.id))
-      .returning()
+      .where(eq(products.id, id))
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-    }
+    // Also delete the corresponding stock entry
+    const stockName = `${productToDelete.name} - ${productToDelete.variant}`
+    await db
+      .delete(stocks)
+      .where(eq(stocks.name, stockName))
 
     return NextResponse.json({ success: true })
   } catch (error) {

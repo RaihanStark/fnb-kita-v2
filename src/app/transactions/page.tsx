@@ -5,11 +5,13 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, ShoppingCart, AlertCircle, Package, Gift, Trash2, Loader2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Plus, ShoppingCart, AlertCircle, Package, Gift, Trash2, Loader2, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { formatDateUTC7, formatTimeWIB } from '@/lib/utils/format-date'
 import { formatCurrency } from '@/lib/utils/format'
 import { TransactionService } from '@/lib/services/transaction.service'
+import { openingProcedureService } from '@/lib/services/opening-procedure'
 import { useToast } from '@/hooks/use-toast'
 
 const typeConfig = {
@@ -25,23 +27,33 @@ export default function TransactionsPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasOpeningToday, setHasOpeningToday] = useState(false)
+  const [checkingOpening, setCheckingOpening] = useState(true)
 
   useEffect(() => {
-    fetchTransactions()
+    checkOpeningAndFetchTransactions()
   }, [])
 
-  const fetchTransactions = async () => {
+  const checkOpeningAndFetchTransactions = async () => {
     try {
-      const data = await TransactionService.getTransactions()
-      setTransactions(data)
+      // Check opening status first
+      const openingResult = await openingProcedureService.checkTodayOpening()
+      setHasOpeningToday(openingResult.hasOpening && openingResult.opening?.completed)
+      
+      // Only fetch transactions if opening is completed
+      if (openingResult.hasOpening && openingResult.opening?.completed) {
+        const data = await TransactionService.getTransactions()
+        setTransactions(data)
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Gagal memuat transaksi",
+        description: "Gagal memuat data",
         variant: "destructive"
       })
     } finally {
       setLoading(false)
+      setCheckingOpening(false)
     }
   }
 
@@ -59,6 +71,43 @@ export default function TransactionsPage() {
     const filtered = type ? transactions.filter(t => t.type === type) : transactions
     return filtered.reduce((sum, t) => 
       sum + t.items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
+    )
+  }
+
+  // Show loading state while checking opening status
+  if (checkingOpening) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // Show alert if no opening today
+  if (!hasOpeningToday) {
+    return (
+      <AppLayout>
+        <div className="p-4">
+          <Alert className="border-orange-200 bg-orange-50">
+            <Lock className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Transaksi tidak dapat dilakukan.</strong>
+              <br />
+              Silakan lakukan pembukaan toko terlebih dahulu untuk memulai transaksi hari ini.
+              <br />
+              <Button 
+                variant="link" 
+                className="p-0 h-auto mt-2 text-orange-700 hover:text-orange-800"
+                onClick={() => router.push('/procedures/opening')}
+              >
+                Ke Pembukaan →
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppLayout>
     )
   }
 

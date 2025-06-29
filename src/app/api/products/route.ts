@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, products } from '@/lib/db'
+import { getDb, products, stocks } from '@/lib/db'
 import { authenticateUser } from '@/lib/auth/middleware'
 import { eq, desc } from 'drizzle-orm'
 
@@ -67,6 +67,19 @@ export async function POST(request: NextRequest) {
         isActive: isActive ?? true
       })
       .returning()
+
+    // Create corresponding stock entry with 0 quantity
+    await db
+      .insert(stocks)
+      .values({
+        name: `${name} - ${variant}`,
+        type: 'product',
+        unit: 'pcs',
+        currentStock: '0',
+        minStock: '10', // Default minimum stock
+        costPerUnit: String(price),
+        notes: `Auto-created from product: ${name} ${variant}`
+      })
 
     return NextResponse.json(product)
   } catch (error) {
