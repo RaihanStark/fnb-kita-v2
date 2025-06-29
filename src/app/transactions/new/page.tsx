@@ -144,6 +144,16 @@ export default function NewTransactionPage() {
       return
     }
 
+    // Check if notes is required and filled
+    if (type !== 'sales' && notes.trim() === '') {
+      toast({
+        title: "Error",
+        description: "Catatan wajib diisi untuk tipe transaksi ini",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const response = await fetch('/api/transactions', {
@@ -365,15 +375,23 @@ export default function NewTransactionPage() {
         {/* Notes */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Catatan</CardTitle>
+            <CardTitle className="text-base">
+              Catatan {type !== 'sales' && <span className="text-red-500">*</span>}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Tambahkan catatan (opsional)"
+              placeholder={type !== 'sales' ? "Catatan wajib diisi untuk tipe transaksi ini" : "Tambahkan catatan (opsional)"}
               rows={3}
+              required={type !== 'sales'}
             />
+            {type !== 'sales' && notes.trim() === '' && (
+              <p className="text-sm text-red-500 mt-1">
+                Catatan wajib diisi untuk transaksi {type === 'damaged' ? 'rusak' : type === 'bonus' ? 'bonus' : 'buang'}
+              </p>
+            )}
           </CardContent>
         </Card>
 
