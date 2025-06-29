@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,9 +37,9 @@ export default function NewStockPage() {
     name: '',
     type: '',
     unit: '',
-    currentStock: '0',
-    minStock: '',
-    costPerUnit: '',
+    currentStock: 0,
+    minStock: undefined as number | undefined,
+    costPerUnit: undefined as number | undefined,
     notes: ''
   })
 
@@ -160,10 +161,10 @@ export default function NewStockPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentStock">Stok Saat Ini</Label>
-                  <Input
+                  <NumberInput
                     id="currentStock"
-                    type="number"
-                    value="0"
+                    value={0}
+                    onChange={() => {}}
                     disabled
                     className="bg-gray-100"
                   />
@@ -171,13 +172,13 @@ export default function NewStockPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="minStock">Stok Minimum *</Label>
-                  <Input
+                  <NumberInput
                     id="minStock"
-                    type="number"
-                    step="0.01"
                     value={formData.minStock}
-                    onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, minStock: value })}
                     placeholder="0"
+                    min={0}
+                    allowDecimals={true}
                     required
                   />
                 </div>
@@ -185,12 +186,13 @@ export default function NewStockPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="costPerUnit">Harga per Satuan (Opsional)</Label>
-                <Input
+                <NumberInput
                   id="costPerUnit"
-                  type="number"
                   value={formData.costPerUnit}
-                  onChange={(e) => setFormData({ ...formData, costPerUnit: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, costPerUnit: value })}
                   placeholder="Contoh: 5000"
+                  min={0}
+                  allowDecimals={true}
                 />
               </div>
 

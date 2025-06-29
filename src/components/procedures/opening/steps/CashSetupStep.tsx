@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -84,15 +85,15 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
             {denominations.map((denom, index) => (
               <div key={denom.value} className="flex items-center gap-3">
                 <Label className="w-24 text-right">{denom.label}</Label>
-                <Input
-                  type="number"
-                  min="0"
+                <NumberInput
+                  min={0}
                   value={denom.count}
-                  onChange={(e) =>
-                    updateDenomination(index, parseInt(e.target.value) || 0)
+                  onChange={(value) =>
+                    updateDenomination(index, value || 0)
                   }
                   className="w-24"
                   placeholder="0"
+                  allowDecimals={false}
                 />
                 <span className="text-sm text-muted-foreground">lembar</span>
                 <span className="ml-auto font-medium">

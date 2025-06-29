@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -312,50 +313,50 @@ export function FinalStockCountStep({
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-2">
                         <Label className="text-sm">Mentah/Frozen</Label>
-                        <Input
-                          type="number"
-                          min="0"
+                        <NumberInput
+                          min={0}
                           value={item.frozenCount || 0}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             updateStockItem(
                               item.id,
                               "frozenCount",
-                              parseInt(e.target.value) || 0
+                              value || 0
                             )
                           }
                           placeholder="0"
+                          allowDecimals={false}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Siap Jual</Label>
-                        <Input
-                          type="number"
-                          min="0"
+                        <NumberInput
+                          min={0}
                           value={item.readyCount || 0}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             updateStockItem(
                               item.id,
                               "readyCount",
-                              parseInt(e.target.value) || 0
+                              value || 0
                             )
                           }
                           placeholder="0"
+                          allowDecimals={false}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Rusak/Gagal</Label>
-                        <Input
-                          type="number"
-                          min="0"
+                        <NumberInput
+                          min={0}
                           value={item.damagedCount || 0}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             updateStockItem(
                               item.id,
                               "damagedCount",
-                              parseInt(e.target.value) || 0
+                              value || 0
                             )
                           }
                           placeholder="0"
+                          allowDecimals={false}
                         />
                       </div>
                     </div>
@@ -369,19 +370,19 @@ export function FinalStockCountStep({
                 ) : (
                   <div className="flex items-center gap-3">
                     <Label className="w-24">Stok Fisik:</Label>
-                    <Input
-                      type="number"
-                      min="0"
+                    <NumberInput
+                      min={0}
                       value={item.currentCount || 0}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         updateStockItem(
                           item.id,
                           "currentCount",
-                          parseInt(e.target.value) || 0
+                          value || 0
                         )
                       }
                       className="w-32"
                       placeholder="0"
+                      allowDecimals={true}
                     />
                     <span className="text-sm text-muted-foreground">
                       {item.unit}

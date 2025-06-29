@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -179,13 +180,13 @@ export function CashReconciliationStep({ data, onNext }: CashReconciliationStepP
             {denominations.map((denom, index) => (
               <div key={denom.value} className="flex items-center gap-3">
                 <Label className="w-24 text-right">{denom.label}</Label>
-                <Input
-                  type="number"
-                  min="0"
+                <NumberInput
                   value={denom.count}
-                  onChange={(e) =>
-                    updateDenomination(index, parseInt(e.target.value) || 0)
+                  onChange={(value) =>
+                    updateDenomination(index, value || 0)
                   }
+                  min={0}
+                  allowDecimals={false}
                   className="w-24"
                   placeholder="0"
                 />
@@ -211,12 +212,12 @@ export function CashReconciliationStep({ data, onNext }: CashReconciliationStepP
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Label htmlFor="digital-amount">Total QRIS/Transfer:</Label>
-              <Input
+              <NumberInput
                 id="digital-amount"
-                type="number"
-                min="0"
                 value={digitalAmount}
-                onChange={(e) => setDigitalAmount(parseInt(e.target.value) || 0)}
+                onChange={(value) => setDigitalAmount(value || 0)}
+                min={0}
+                allowDecimals={true}
                 className="w-40"
                 placeholder="0"
               />

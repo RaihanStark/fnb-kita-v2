@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -205,50 +206,50 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
                           <div className="grid grid-cols-3 gap-3">
                             <div>
                               <Label htmlFor={`frozen-${item.id}`}>Frozen/Mentah</Label>
-                              <Input
+                              <NumberInput
                                 id={`frozen-${item.id}`}
-                                type="number"
-                                min="0"
+                                min={0}
                                 value={item.frozenCount || 0}
-                                onChange={(e) =>
+                                onChange={(value) =>
                                   updateStockItem(
                                     item.id,
                                     "frozenCount",
-                                    parseInt(e.target.value) || 0
+                                    value || 0
                                   )
                                 }
+                                allowDecimals={false}
                               />
                             </div>
                             <div>
                               <Label htmlFor={`ready-${item.id}`}>Siap Jual</Label>
-                              <Input
+                              <NumberInput
                                 id={`ready-${item.id}`}
-                                type="number"
-                                min="0"
+                                min={0}
                                 value={item.readyCount || 0}
-                                onChange={(e) =>
+                                onChange={(value) =>
                                   updateStockItem(
                                     item.id,
                                     "readyCount",
-                                    parseInt(e.target.value) || 0
+                                    value || 0
                                   )
                                 }
+                                allowDecimals={false}
                               />
                             </div>
                             <div>
                               <Label htmlFor={`damaged-${item.id}`}>Rusak/Gagal</Label>
-                              <Input
+                              <NumberInput
                                 id={`damaged-${item.id}`}
-                                type="number"
-                                min="0"
+                                min={0}
                                 value={item.damagedCount || 0}
-                                onChange={(e) =>
+                                onChange={(value) =>
                                   updateStockItem(
                                     item.id,
                                     "damagedCount",
-                                    parseInt(e.target.value) || 0
+                                    value || 0
                                   )
                                 }
+                                allowDecimals={false}
                               />
                             </div>
                           </div>
@@ -274,20 +275,20 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
                         <>
                           <div>
                             <Label htmlFor={`current-${item.id}`}>Jumlah Saat Ini</Label>
-                            <Input
+                            <NumberInput
                               id={`current-${item.id}`}
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              min={0}
+                              step={0.01}
                               value={item.currentCount || 0}
-                              onChange={(e) =>
+                              onChange={(value) =>
                                 updateStockItem(
                                   item.id,
                                   "currentCount",
-                                  parseFloat(e.target.value) || 0
+                                  value || 0
                                 )
                               }
                               placeholder="0"
+                              allowDecimals={true}
                             />
                           </div>
                           <div>

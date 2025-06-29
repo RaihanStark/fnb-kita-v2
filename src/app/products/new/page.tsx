@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
@@ -17,7 +18,7 @@ export default function NewProductPage() {
   const [formData, setFormData] = useState({
     name: 'Risol',
     variant: '',
-    price: '',
+    price: undefined as number | undefined,
     isActive: true
   })
 
@@ -100,12 +101,13 @@ export default function NewProductPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="price">Harga Jual</Label>
-                <Input
+                <NumberInput
                   id="price"
-                  type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, price: value })}
                   placeholder="Contoh: 5000"
+                  min={0}
+                  allowDecimals={true}
                   required
                 />
               </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -77,14 +78,14 @@ export function TomorrowPreparationStep({ data, onNext }: TomorrowPreparationSte
           
           <div className="flex items-center gap-3">
             <Label htmlFor="modal-amount">Jumlah Modal:</Label>
-            <Input
+            <NumberInput
               id="modal-amount"
-              type="number"
-              min="0"
-              step="10000"
+              min={0}
+              step={10000}
               value={modalAmount}
-              onChange={(e) => setModalAmount(parseInt(e.target.value) || 0)}
+              onChange={(value) => setModalAmount(value || 0)}
               className="w-40"
+              allowDecimals={false}
             />
             <span className="text-sm text-muted-foreground">
               {formatCurrency(modalAmount)}

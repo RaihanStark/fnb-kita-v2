@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -258,23 +259,24 @@ export default function NewPurchasePage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Jumlah *</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                        <NumberInput
+                          value={item.quantity ? parseFloat(item.quantity) : undefined}
+                          onChange={(value) => updateItem(index, 'quantity', value?.toString() || '')}
                           placeholder="0"
+                          min={0}
+                          allowDecimals={true}
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label>Harga per Unit *</Label>
-                        <Input
-                          type="number"
-                          value={item.pricePerUnit}
-                          onChange={(e) => updateItem(index, 'pricePerUnit', e.target.value)}
+                        <NumberInput
+                          value={item.pricePerUnit ? parseFloat(item.pricePerUnit) : undefined}
+                          onChange={(value) => updateItem(index, 'pricePerUnit', value?.toString() || '')}
                           placeholder="0"
+                          min={0}
+                          allowDecimals={true}
                           required
                         />
                       </div>

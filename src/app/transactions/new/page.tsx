@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -488,14 +489,15 @@ export default function NewTransactionPage() {
                       {type === "sales" && !item.isPackaging && (
                         <div className="flex-1 flex items-center gap-2">
                           <span className="text-sm text-gray-600">@</span>
-                          <Input
-                            type="number"
-                            value={item.price || ""}
-                            onChange={(e) =>
-                              updatePrice(index, Number(e.target.value))
+                          <NumberInput
+                            value={item.price}
+                            onChange={(value) =>
+                              updatePrice(index, value || 0)
                             }
                             className="h-8"
                             placeholder="Harga"
+                            min={0}
+                            allowDecimals={true}
                           />
                         </div>
                       )}
