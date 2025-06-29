@@ -24,10 +24,12 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
   const [reportData, setReportData] = useState({
     totalSales: 0,
     totalTransactions: 0,
+    totalItemsSold: 0,
     totalPurchases: 0,
     totalDamaged: 0,
     totalBonus: 0,
     grossProfit: 0,
+    bestSelling: null as { name: string; quantity: number } | null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -47,13 +49,27 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
         
         let salesTotal = 0;
         let salesCount = 0;
+        let itemsSold = 0;
         let damagedTotal = 0;
         let bonusTotal = 0;
+        const productSales: Record<string, number> = {};
         
         transactions.forEach((trans: any) => {
           if (trans.type === 'sales') {
             salesTotal += Number(trans.totalAmount) || 0;
             salesCount++;
+            
+            // Count items sold
+            if (trans.items && Array.isArray(trans.items)) {
+              trans.items.forEach((item: any) => {
+                const quantity = item.quantity || 0;
+                itemsSold += quantity;
+                
+                // Track sales by product
+                const productName = item.variant ? `${item.name} - ${item.variant}` : item.name;
+                productSales[productName] = (productSales[productName] || 0) + quantity;
+              });
+            }
           } else if (trans.type === 'damaged') {
             // Calculate damaged value based on items
             if (trans.items && Array.isArray(trans.items)) {
@@ -70,6 +86,16 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
             }
           }
         });
+        
+        // Find best selling product
+        let bestSelling = null;
+        let maxQuantity = 0;
+        for (const [product, quantity] of Object.entries(productSales)) {
+          if (quantity > maxQuantity) {
+            maxQuantity = quantity;
+            bestSelling = { name: product, quantity };
+          }
+        }
 
         // Fetch today's purchases
         const purchaseResponse = await fetch('/api/purchases', {
@@ -98,10 +124,12 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
         setReportData({
           totalSales: salesTotal,
           totalTransactions: salesCount,
+          totalItemsSold: itemsSold,
           totalPurchases: purchasesTotal,
           totalDamaged: damagedTotal,
           totalBonus: bonusTotal,
           grossProfit: grossProfit,
+          bestSelling: bestSelling,
         });
       }
     } catch (error) {
@@ -152,7 +180,7 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Penjualan</p>
               <p className="text-2xl font-bold text-green-700">
@@ -165,7 +193,22 @@ export function DailyReportStep({ data, onNext }: DailyReportStepProps) {
                 {reportData.totalTransactions}
               </p>
             </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Item Terjual</p>
+              <p className="text-2xl font-bold text-green-700">
+                {reportData.totalItemsSold} pcs
+              </p>
+            </div>
           </div>
+          
+          {reportData.bestSelling && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-1">Produk Terlaris</p>
+              <p className="font-medium text-green-700">
+                {reportData.bestSelling.name} ({reportData.bestSelling.quantity} pcs)
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

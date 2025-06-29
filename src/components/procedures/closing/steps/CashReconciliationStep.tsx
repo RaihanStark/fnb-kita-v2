@@ -69,47 +69,18 @@ export function CashReconciliationStep({ data, onNext }: CashReconciliationStepP
       if (transResponse.ok) {
         const transactions = await transResponse.json();
         
-        console.log('All transactions:', transactions);
+        // Calculate today's sales - same logic as dashboard
+        const salesTransactions = transactions.filter((t: any) => t.type === 'sales');
+        const todaySales = salesTransactions.reduce((sum: number, t: any) => 
+          sum + (Number(t.totalAmount) || 0), 0
+        );
         
-        // Calculate sales by payment method
-        let cashTotal = 0;
-        let digitalTotal = 0;
+        // For now, assume all sales are cash since payment method is not in schema
+        setCashSales(todaySales);
+        setDigitalSales(0);
         
-        // Filter today's transactions - using UTC+7 timezone
-        const todayStr = getDateInUTC7();
-        
-        transactions.forEach((t: any) => {
-          const transDate = new Date(t.createdAt);
-          const transDateStr = transDate.toISOString().split('T')[0];
-          
-          console.log('Transaction:', {
-            id: t.id,
-            type: t.type,
-            date: transDateStr,
-            today: todayStr,
-            amount: t.totalAmount,
-            paymentMethod: t.paymentMethod,
-            fullTransaction: t
-          });
-          
-          // Only count today's sales transactions
-          if (t.type === 'sales' && transDateStr === todayStr) {
-            if (t.paymentMethod === 'cash') {
-              cashTotal += Number(t.totalAmount) || 0;
-            } else if (t.paymentMethod === 'qris' || t.paymentMethod === 'digital') {
-              digitalTotal += Number(t.totalAmount) || 0;
-            }
-          }
-        });
-        
-        console.log('Cash sales:', cashTotal);
-        console.log('Digital sales:', digitalTotal);
-        
-        setCashSales(cashTotal);
-        setDigitalSales(digitalTotal);
-        
-        // System cash = Modal awal + Total Penjualan (semua metode pembayaran)
-        setSystemCash(initialCash + cashTotal + digitalTotal);
+        // System cash = Modal awal + Total Penjualan (same as dashboard)
+        setSystemCash(initialCash + todaySales);
       }
     } catch (error) {
       console.error("Error fetching system cash:", error);

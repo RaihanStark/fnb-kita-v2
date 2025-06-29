@@ -15,16 +15,24 @@ import {
 import { Package, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { openingProcedureService } from "@/lib/services/opening-procedure";
+import { getDateInUTC7 } from "@/lib/utils/timezone";
 
 interface StockItem {
   id: string;
   name: string;
   type: string;
   unit: string;
+  variant?: string;
+  // For products (risol)
+  frozenCount?: number;
+  readyCount?: number;
+  damagedCount?: number;
+  // For other items
+  currentCount?: number;
+  // Common fields
   openingStock: number;
-  currentStock: number;
+  purchasedCount: number;
   soldCount: number;
-  damagedCount: number;
   notes: string;
 }
 
@@ -33,8 +41,13 @@ interface FinalStockCountStepProps {
   onNext: (data: any) => void;
 }
 
-export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) {
-  const [stockItems, setStockItems] = useState<StockItem[]>(data.stockItems || []);
+export function FinalStockCountStep({
+  data,
+  onNext,
+}: FinalStockCountStepProps) {
+  const [stockItems, setStockItems] = useState<StockItem[]>(
+    data.stockItems || []
+  );
   const [generalNotes, setGeneralNotes] = useState(data.generalNotes || "");
   const [loading, setLoading] = useState(true);
 
@@ -49,19 +62,25 @@ export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) 
   const fetchStockData = async () => {
     try {
       // Get all stocks
-      const stocksResponse = await api.get("/api/stocks");
-      const stocks = stocksResponse.data || [];
+      const response = await fetch("/api/stocks", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch stocks");
+
+      const stocks = await response.json();
 
       // Get opening procedure data for initial counts
       const openingResult = await openingProcedureService.checkTodayOpening();
       let openingStockData: Record<string, number> = {};
-      
+
       if (openingResult.hasOpening && openingResult.opening?.stepData?.step2) {
-        const openingStocks = openingResult.opening.stepData.step2.stockItems || [];
+        const openingStocks =
+          openingResult.opening.stepData.step2.stockItems || [];
         openingStocks.forEach((item: any) => {
           // For risol products, sum up all counts
           if (item.frozenCount !== undefined) {
-            openingStockData[item.id] = (item.frozenCount || 0) + (item.readyCount || 0);
+            openingStockData[item.id] =
+              (item.frozenCount || 0) + (item.readyCount || 0);
           } else {
             openingStockData[item.id] = item.currentCount || 0;
           }
@@ -69,46 +88,110 @@ export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) 
       }
 
       // Get today's transactions to calculate sold/damaged
-      const transResponse = await fetch('/api/transactions', {
-        credentials: 'include'
+      const transResponse = await fetch("/api/transactions", {
+        credentials: "include",
       });
-      
-      const transactionData: Record<string, { sold: number; damaged: number }> = {};
-      
+
+      const transactionData: Record<string, { sold: number; damaged: number }> =
+        {};
+
       if (transResponse.ok) {
         const transactions = await transResponse.json();
-        
+
         // Calculate sold and damaged for each item
         transactions.forEach((trans: any) => {
           if (trans.items && Array.isArray(trans.items)) {
             trans.items.forEach((item: any) => {
-              const stockId = item.stockId || item.id;
-              if (!transactionData[stockId]) {
-                transactionData[stockId] = { sold: 0, damaged: 0 };
-              }
-              
-              if (trans.type === 'sales') {
-                transactionData[stockId].sold += item.quantity || 0;
-              } else if (trans.type === 'damaged') {
-                transactionData[stockId].damaged += item.quantity || 0;
+              // Find stock ID by matching product name and variant
+              const stockId = stocks.find((s: any) => {
+                const stockName = s.name;
+                const itemFullName = item.variant
+                  ? `${item.name} - ${item.variant}`
+                  : item.name;
+                return stockName === itemFullName || stockName === item.name;
+              })?.id;
+
+              if (stockId) {
+                if (!transactionData[stockId]) {
+                  transactionData[stockId] = { sold: 0, damaged: 0 };
+                }
+
+                if (trans.type === "sales") {
+                  transactionData[stockId].sold += item.quantity || 0;
+                } else if (trans.type === "damaged") {
+                  transactionData[stockId].damaged += item.quantity || 0;
+                }
               }
             });
           }
         });
       }
 
-      // Map stocks to stock items with all calculations
-      const mappedItems: StockItem[] = stocks.map((stock: any) => ({
-        id: stock.id,
-        name: stock.name,
-        type: stock.type,
-        unit: stock.unit,
-        openingStock: openingStockData[stock.id] || 0,
-        currentStock: 0, // User will count this
-        soldCount: transactionData[stock.id]?.sold || 0,
-        damagedCount: transactionData[stock.id]?.damaged || 0,
-        notes: "",
-      }));
+      // Get today's purchases to calculate purchased amounts
+      const todayStr = getDateInUTC7();
+      const purchaseResponse = await fetch(`/api/purchases/by-date?date=${todayStr}`, {
+        credentials: "include",
+      });
+
+      const purchaseData: Record<string, number> = {};
+
+      if (purchaseResponse.ok) {
+        const todayPurchases = await purchaseResponse.json();
+
+        console.log("Today:", todayStr);
+        console.log("Today purchases:", todayPurchases);
+
+        // Process purchase items
+        todayPurchases.forEach((purchase: any) => {
+          if (purchase.items && Array.isArray(purchase.items)) {
+            purchase.items.forEach((item: any) => {
+              if (item.stockId) {
+                purchaseData[item.stockId] =
+                  (purchaseData[item.stockId] || 0) + (parseFloat(item.quantity) || 0);
+              }
+            });
+          }
+        });
+
+        console.log("Purchase data by stock:", purchaseData);
+      }
+
+      // Initialize stock items - same format as opening
+      const mappedItems: StockItem[] = stocks.map((stock: any) => {
+        if (stock.type === "product") {
+          // For products (risol), use the special format
+          const variant = stock.name.includes(" - ")
+            ? stock.name.split(" - ")[1]
+            : "";
+          return {
+            id: stock.id,
+            name: stock.name.split(" - ")[0], // Extract product name
+            type: stock.type,
+            unit: stock.unit,
+            variant: variant,
+            frozenCount: 0,
+            readyCount: 0,
+            damagedCount: 0,
+            openingStock: openingStockData[stock.id] || 0,
+            purchasedCount: purchaseData[stock.id] || 0,
+            soldCount: transactionData[stock.id]?.sold || 0,
+            notes: "",
+          };
+        } else {
+          // For other items, just count current stock
+          return {
+            id: stock.id,
+            name: stock.name,
+            type: stock.type,
+            unit: stock.unit,
+            currentCount: 0,
+            openingStock: openingStockData[stock.id] || 0,
+            purchasedCount: purchaseData[stock.id] || 0,
+            soldCount: transactionData[stock.id]?.sold || 0,
+            notes: "",
+          };
+        }
+      });
 
       setStockItems(mappedItems);
     } catch (error) {
@@ -120,16 +203,23 @@ export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) 
 
   const updateStockItem = (id: string, field: keyof StockItem, value: any) => {
     setStockItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
   const getExpectedStock = (item: StockItem) => {
-    // Expected = Opening + Purchases - Sales - Damaged - Bonus
-    // For now: Expected = Opening - Sales - Damaged
-    return Math.max(0, item.openingStock - item.soldCount - item.damagedCount);
+    // Expected = Opening + Purchased - Sales
+    return Math.max(
+      0,
+      item.openingStock + item.purchasedCount - item.soldCount
+    );
+  };
+
+  const getCurrentTotal = (item: StockItem) => {
+    if (item.type === "product") {
+      return (item.frozenCount || 0) + (item.readyCount || 0);
+    }
+    return item.currentCount || 0;
   };
 
   const handleSubmit = () => {
@@ -166,17 +256,24 @@ export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) 
       <div className="space-y-4">
         {stockItems.map((item) => {
           const expectedStock = getExpectedStock(item);
-          const difference = item.currentStock - expectedStock;
-          
+          const currentTotal = getCurrentTotal(item);
+          const difference = currentTotal - expectedStock;
+
           return (
             <Card key={item.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{item.name}</CardTitle>
+                  <CardTitle className="text-base">
+                    {item.name} {item.variant && `- ${item.variant}`}
+                  </CardTitle>
                   <span className="text-sm text-muted-foreground">
-                    {item.type === "product" ? "Produk" : 
-                     item.type === "packaging" ? "Kemasan" :
-                     item.type === "utilities" ? "Utilitas" : "Bahan"}
+                    {item.type === "product"
+                      ? "Produk"
+                      : item.type === "packaging"
+                      ? "Kemasan"
+                      : item.type === "utilities"
+                      ? "Utilitas"
+                      : "Bahan"}
                   </span>
                 </div>
               </CardHeader>
@@ -184,58 +281,131 @@ export function FinalStockCountStep({ data, onNext }: FinalStockCountStepProps) 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">Stok Awal</p>
-                    <p className="font-medium">{item.openingStock} {item.unit}</p>
+                    <p className="font-medium">
+                      {item.openingStock} {item.unit}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Pembelian</p>
+                    <p className="font-medium text-blue-600">
+                      +{item.purchasedCount} {item.unit}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Terjual</p>
-                    <p className="font-medium text-green-600">{item.soldCount} {item.unit}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Rusak</p>
-                    <p className="font-medium text-red-600">{item.damagedCount} {item.unit}</p>
+                    <p className="font-medium text-green-600">
+                      -{item.soldCount} {item.unit}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Perkiraan</p>
-                    <p className="font-medium">{expectedStock} {item.unit}</p>
+                    <p className="font-medium">
+                      {expectedStock} {item.unit}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Label className="w-24">Stok Fisik:</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={item.currentStock}
-                    onChange={(e) =>
-                      updateStockItem(item.id, "currentStock", parseInt(e.target.value) || 0)
-                    }
-                    className="w-32"
-                    placeholder="0"
-                  />
-                  <span className="text-sm text-muted-foreground">{item.unit}</span>
-                  
-                  {item.currentStock > 0 && difference !== 0 && (
-                    <span className={`ml-auto text-sm font-medium ${
-                      difference > 0 ? "text-blue-600" : "text-red-600"
-                    }`}>
-                      {difference > 0 && "+"}{difference} {item.unit}
+                {/* Count inputs based on type */}
+                {item.type === "product" ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Mentah/Frozen</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.frozenCount || 0}
+                          onChange={(e) =>
+                            updateStockItem(
+                              item.id,
+                              "frozenCount",
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Siap Jual</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.readyCount || 0}
+                          onChange={(e) =>
+                            updateStockItem(
+                              item.id,
+                              "readyCount",
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Rusak/Gagal</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.damagedCount || 0}
+                          onChange={(e) =>
+                            updateStockItem(
+                              item.id,
+                              "damagedCount",
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Total:</span>
+                      <span className="font-bold">
+                        {currentTotal} {item.unit}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Label className="w-24">Stok Fisik:</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={item.currentCount || 0}
+                      onChange={(e) =>
+                        updateStockItem(
+                          item.id,
+                          "currentCount",
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      className="w-32"
+                      placeholder="0"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {item.unit}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {difference !== 0 && item.currentStock > 0 && (
-                  <div className="flex items-start gap-2 p-2 bg-amber-50 rounded-md">
-                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-                    <p className="text-xs text-amber-700">
-                      Ada selisih dengan perkiraan sistem. Mohon berikan catatan.
-                    </p>
+                {currentTotal > 0 && difference !== 0 && (
+                  <div className="flex items-center justify-between p-2 bg-amber-50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <p className="text-xs text-amber-700">
+                        Selisih dengan perkiraan: {difference > 0 ? "+" : ""}
+                        {difference} {item.unit}
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 <Input
                   type="text"
                   value={item.notes}
-                  onChange={(e) => updateStockItem(item.id, "notes", e.target.value)}
+                  onChange={(e) =>
+                    updateStockItem(item.id, "notes", e.target.value)
+                  }
                   placeholder="Catatan untuk item ini (opsional)"
                   className="text-sm"
                 />

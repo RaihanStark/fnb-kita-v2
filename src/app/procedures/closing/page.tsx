@@ -26,6 +26,7 @@ import { FinalStockCountStep } from "@/components/procedures/closing/steps/Final
 import { DailyReportStep } from "@/components/procedures/closing/steps/DailyReportStep";
 import { CleaningSecurityStep } from "@/components/procedures/closing/steps/CleaningSecurityStep";
 import { TomorrowPreparationStep } from "@/components/procedures/closing/steps/TomorrowPreparationStep";
+import { ClosingSummary } from "@/components/procedures/closing/ClosingSummary";
 
 const STEPS = [
   {
@@ -131,11 +132,6 @@ export default function ClosingProcedurePage() {
 
       if (result.success) {
         setCurrentClosing(result.closing);
-        
-        // If all steps completed, redirect to dashboard
-        if (result.closing.completed) {
-          router.push("/dashboard");
-        }
       }
     } catch (error) {
       console.error("Error updating step:", error);
@@ -171,6 +167,18 @@ export default function ClosingProcedurePage() {
             </Button>
           </Alert>
         </div>
+      </AppLayout>
+    );
+  }
+
+  // Show completion summary if closing is completed
+  if (currentClosing?.completed) {
+    return (
+      <AppLayout>
+        <ClosingSummary 
+          data={currentClosing.stepData || {}} 
+          onRestart={() => router.push("/dashboard")}
+        />
       </AppLayout>
     );
   }
