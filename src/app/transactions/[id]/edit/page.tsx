@@ -21,13 +21,13 @@ interface TransactionItem {
   price?: number
 }
 
-const productVariants = [
-  { id: '1', name: 'Risol', variant: 'Keju', defaultPrice: 5000 },
-  { id: '2', name: 'Risol', variant: 'Sosis', defaultPrice: 5000 },
-  { id: '3', name: 'Risol', variant: 'Ayam', defaultPrice: 5000 },
-  { id: '4', name: 'Risol', variant: 'Beef', defaultPrice: 6000 },
-  { id: '5', name: 'Risol', variant: 'Mozarella', defaultPrice: 7000 },
-]
+interface Product {
+  id: string
+  name: string
+  variant: string
+  price: string
+  isActive: boolean
+}
 
 export default function EditTransactionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -38,12 +38,15 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [transactionId, setTransactionId] = useState<string>('')
+  const [products, setProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
 
   useEffect(() => {
     params.then(p => {
       setTransactionId(p.id)
       fetchTransaction(p.id)
     })
+    fetchProducts()
   }, [params])
 
   const fetchTransaction = async (id: string) => {
@@ -69,7 +72,27 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
     }
   }
 
-  const addItem = (product: typeof productVariants[0]) => {
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products', {
+        credentials: 'include'
+      })
+      if (!response.ok) throw new Error('Failed to fetch products')
+      
+      const data = await response.json()
+      setProducts(data.filter((p: Product) => p.isActive))
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat produk",
+        variant: "destructive"
+      })
+    } finally {
+      setLoadingProducts(false)
+    }
+  }
+
+  const addItem = (product: Product) => {
     const existingItem = items.find(
       item => item.productId === product.id && item.variant === product.variant
     )
@@ -82,7 +105,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
         name: product.name,
         variant: product.variant,
         quantity: 1,
-        price: type === 'sales' ? product.defaultPrice : undefined
+        price: type === 'sales' ? Number(product.price) : undefined
       }])
     }
   }
@@ -249,20 +272,31 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
             <CardTitle className="text-base">Pilih Produk</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              {productVariants.map((product) => (
-                <Button
-                  key={product.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addItem(product)}
-                  className="justify-start"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  {product.name} {product.variant}
-                </Button>
-              ))}
-            </div>
+            {loadingProducts ? (
+              <div className="text-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                <p className="text-sm text-gray-500 mt-2">Memuat produk...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Tidak ada produk aktif. Silakan tambahkan produk terlebih dahulu.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {products.map((product) => (
+                  <Button
+                    key={product.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addItem(product)}
+                    className="justify-start"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    {product.name} {product.variant}
+                  </Button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

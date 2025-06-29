@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Plus, Trash2, Package, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 interface StockItem {
   id: string;
@@ -31,47 +32,56 @@ interface StockCountStepProps {
 }
 
 export function StockCountStep({ data, onNext }: StockCountStepProps) {
+  const { toast } = useToast();
   const [stockItems, setStockItems] = useState<StockItem[]>(
-    data.stockItems || [
-      {
-        id: "1",
-        name: "Risol",
-        variant: "Keju",
-        frozenCount: 0,
-        readyCount: 0,
-        damagedCount: 0,
-        notes: "",
-      },
-      {
-        id: "2",
-        name: "Risol",
-        variant: "Sosis",
-        frozenCount: 0,
-        readyCount: 0,
-        damagedCount: 0,
-        notes: "",
-      },
-      {
-        id: "3",
-        name: "Risol",
-        variant: "Beef",
-        frozenCount: 0,
-        readyCount: 0,
-        damagedCount: 0,
-        notes: "",
-      },
-      {
-        id: "4",
-        name: "Risol",
-        variant: "Udang",
-        frozenCount: 0,
-        readyCount: 0,
-        damagedCount: 0,
-        notes: "",
-      },
-    ]
+    data.stockItems || []
   );
   const [generalNotes, setGeneralNotes] = useState(data.generalNotes || "");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!data.stockItems || data.stockItems.length === 0) {
+      fetchProducts();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch products');
+      
+      const products = await response.json();
+      
+      // Only use active products
+      const activeProducts = products.filter((p: any) => p.isActive);
+      
+      // Initialize stock items from products
+      const initialStockItems = activeProducts.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        variant: product.variant,
+        frozenCount: 0,
+        readyCount: 0,
+        damagedCount: 0,
+        notes: "",
+      }));
+      setStockItems(initialStockItems);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat produk",
+        variant: "destructive"
+      });
+      // Fallback to empty array
+      setStockItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateStockItem = (id: string, field: keyof StockItem, value: any) => {
     setStockItems((prev) =>
@@ -118,7 +128,20 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
       </Alert>
 
       <div className="space-y-4">
-        {stockItems.map((item, index) => (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p className="text-sm text-gray-500 mt-2">Memuat produk...</p>
+          </div>
+        ) : stockItems.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Tidak ada produk aktif. Silakan tambahkan produk terlebih dahulu.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          stockItems.map((item, index) => (
           <Card key={item.id}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -196,7 +219,8 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
               )}
             </CardContent>
           </Card>
-        ))}
+        ))
+        )}
       </div>
 
       <Card>
@@ -234,7 +258,11 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSubmit} className="w-full md:w-auto">
+        <Button 
+          onClick={handleSubmit} 
+          className="w-full md:w-auto"
+          disabled={loading || stockItems.length === 0}
+        >
           Lanjut ke Persiapan Display
         </Button>
       </div>

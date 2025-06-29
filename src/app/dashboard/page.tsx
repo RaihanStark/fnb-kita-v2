@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Circle,
   Hourglass,
+  ShoppingBag,
 } from "lucide-react";
 import { openingProcedureService } from "@/lib/services/opening-procedure";
 
@@ -66,6 +67,12 @@ export default function DashboardPage() {
       href: "/procedures/opening",
     },
     {
+      icon: ShoppingBag,
+      label: "Produk",
+      color: "bg-blue-100 text-blue-600",
+      href: "/products",
+    },
+    {
       icon: FileText,
       label: "Reports",
       color: "bg-purple-100 text-purple-600",
@@ -91,6 +98,12 @@ export default function DashboardPage() {
       label: "Opening",
       color: "bg-green-100 text-green-600",
       href: "/procedures/opening",
+    },
+    {
+      icon: ShoppingBag,
+      label: "Produk",
+      color: "bg-blue-100 text-blue-600",
+      href: "/products",
     },
     {
       icon: Clock,

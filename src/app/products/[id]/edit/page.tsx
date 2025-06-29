@@ -1,0 +1,191 @@
+"use client"
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { AppLayout } from '@/components/layout/app-layout'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [productId, setProductId] = useState<string>('')
+  const [formData, setFormData] = useState({
+    name: 'Risol',
+    variant: '',
+    price: '',
+    isActive: true
+  })
+
+  useEffect(() => {
+    params.then(p => {
+      setProductId(p.id)
+      fetchProduct(p.id)
+    })
+  }, [params])
+
+  const fetchProduct = async (id: string) => {
+    try {
+      const response = await fetch(`/api/products/${id}`, {
+        credentials: 'include'
+      })
+      if (!response.ok) throw new Error('Failed to fetch product')
+      
+      const data = await response.json()
+      setFormData({
+        name: data.name,
+        variant: data.variant,
+        price: data.price,
+        isActive: data.isActive
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat produk",
+        variant: "destructive"
+      })
+      router.push('/products')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.variant || !formData.price) {
+      toast({
+        title: "Error",
+        description: "Semua field harus diisi",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update product')
+      }
+
+      toast({
+        title: "Berhasil",
+        description: "Produk berhasil diperbarui"
+      })
+      
+      router.push('/products')
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Gagal memperbarui produk",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <AppLayout title="Edit Produk">
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AppLayout>
+    )
+  }
+
+  return (
+    <AppLayout
+      title="Edit Produk"
+      showBackButton
+    >
+      <div className="p-4 pb-24">
+        <form onSubmit={handleSubmit}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Informasi Produk</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nama Produk</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Contoh: Risol"
+                  disabled
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="variant">Varian</Label>
+                <Input
+                  id="variant"
+                  value={formData.variant}
+                  onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
+                  placeholder="Contoh: Keju, Sosis, Ayam"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Harga Jual</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  placeholder="Contoh: 5000"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Status Aktif</Label>
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-6 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-orange-500 hover:bg-orange-600"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </AppLayout>
+  )
+}
