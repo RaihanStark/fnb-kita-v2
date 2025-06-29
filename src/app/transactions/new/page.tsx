@@ -51,6 +51,7 @@ export default function NewTransactionPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productStocks, setProductStocks] = useState<Stock[]>([]);
   const [packagingStocks, setPackagingStocks] = useState<Stock[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingPackaging, setLoadingPackaging] = useState(true);
@@ -71,7 +72,7 @@ export default function NewTransactionPage() {
 
       // Only fetch products and packaging if opening is completed
       if (openingResult.hasOpening && openingResult.opening?.completed) {
-        await Promise.all([fetchProducts(), fetchPackaging()]);
+        await Promise.all([fetchProducts(), fetchStocks()]);
       }
     } catch (error) {
       toast({
@@ -104,7 +105,7 @@ export default function NewTransactionPage() {
     }
   };
 
-  const fetchPackaging = async () => {
+  const fetchStocks = async () => {
     try {
       const response = await fetch("/api/stocks", {
         credentials: "include",
@@ -112,17 +113,23 @@ export default function NewTransactionPage() {
       if (!response.ok) throw new Error("Failed to fetch stocks");
 
       const data = await response.json();
-      // Filter only packaging type stocks
+      // Separate product and packaging stocks
+      setProductStocks(data.filter((s: Stock) => s.type === "product"));
       setPackagingStocks(data.filter((s: Stock) => s.type === "packaging"));
     } catch (error) {
       toast({
         title: "Error",
-        description: "Gagal memuat kemasan",
+        description: "Gagal memuat stok",
         variant: "destructive",
       });
     } finally {
       setLoadingPackaging(false);
     }
+  };
+
+  const getProductStock = (product: Product) => {
+    const stockName = `${product.name} - ${product.variant}`;
+    return productStocks.find(s => s.name === stockName);
   };
 
   const addItem = (product: Product) => {
@@ -234,7 +241,19 @@ export default function NewTransactionPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create transaction");
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.details && Array.isArray(error.details)) {
+          // Show detailed stock errors
+          toast({
+            title: error.error || "Error",
+            description: error.details.join("\n"),
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(error.error || "Failed to create transaction");
+      }
 
       toast({
         title: "Berhasil",
@@ -242,12 +261,14 @@ export default function NewTransactionPage() {
       });
 
       router.push("/transactions");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Gagal menambahkan transaksi",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (!error.message.includes('Stok tidak mencukupi')) {
+        toast({
+          title: "Error",
+          description: error.message || "Gagal menambahkan transaksi",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -350,10 +371,16 @@ export default function NewTransactionPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(product)}
-                    className="justify-start"
+                    className="justify-start flex-col items-start h-auto py-2"
+                    disabled={getProductStock(product)?.currentStock === "0"}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    {product.name} {product.variant}
+                    <div className="flex items-center">
+                      <Plus className="w-4 h-4 mr-1" />
+                      {product.name} {product.variant}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      Stok: {getProductStock(product)?.currentStock || "0"} pcs
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -386,10 +413,16 @@ export default function NewTransactionPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => addPackagingItem(packaging)}
-                    className="justify-start"
+                    className="justify-start flex-col items-start h-auto py-2"
+                    disabled={parseFloat(packaging.currentStock) === 0}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    {packaging.name}
+                    <div className="flex items-center">
+                      <Plus className="w-4 h-4 mr-1" />
+                      {packaging.name}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      Stok: {packaging.currentStock} {packaging.unit}
+                    </span>
                   </Button>
                 ))}
               </div>
