@@ -202,7 +202,12 @@ export default function TransactionsPage() {
                         <div className="space-y-1">
                           {transaction.items.map((item, idx) => (
                             <div key={idx} className="text-sm text-gray-600">
-                              {item.name} {item.variant} × {item.quantity}
+                              {item.name} {item.variant} × {item.quantity} {item.unit && item.unit !== 'pcs' ? item.unit : ''}
+                              {item.isPackaging && (
+                                <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                  kemasan
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
