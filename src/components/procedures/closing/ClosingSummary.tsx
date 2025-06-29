@@ -245,18 +245,25 @@ export function ClosingSummary({ data, onRestart }: ClosingSummaryProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Modal Disiapkan</span>
                 <span className="font-bold text-lg">
-                  {formatCurrency(step5Data?.tomorrowCash || 0)}
+                  {formatCurrency(step5Data?.modalAmount || 0)}
                 </span>
               </div>
               
-              {step5Data?.needsItems && step5Data.needsItems.length > 0 && (
+              {step5Data?.needToPurchase && step5Data.needToPurchase.trim() && (
                 <div className="pt-2 border-t">
                   <p className="text-sm font-medium mb-1">Kebutuhan Besok:</p>
-                  <ul className="text-sm text-muted-foreground space-y-0.5">
-                    {step5Data.needsItems.map((item: any, index: number) => (
-                      <li key={index}>• {item}</li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground">
+                    {step5Data.needToPurchase}
+                  </p>
+                </div>
+              )}
+              
+              {step5Data?.specialNotes && step5Data.specialNotes.trim() && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-medium mb-1">Catatan Khusus:</p>
+                  <p className="text-sm text-muted-foreground">
+                    {step5Data.specialNotes}
+                  </p>
                 </div>
               )}
             </div>
