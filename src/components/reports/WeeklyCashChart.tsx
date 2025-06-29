@@ -29,15 +29,15 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
     setLoading(true);
     try {
       const response = await fetch(`/api/reports/weekly?period=${period}`, {
-        credentials: 'include'
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch cash data');
+        throw new Error("Failed to fetch cash data");
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         // Transform the data for the chart
         const chartData = result.dailyData.map((day: any) => ({
@@ -48,10 +48,10 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
           purchases: day.purchases,
           closingCash: day.closingCash,
         }));
-        
+
         setData(chartData);
       } else {
-        throw new Error(result.error || 'Failed to fetch cash data');
+        throw new Error(result.error || "Failed to fetch cash data");
       }
     } catch (error) {
       console.error("Error fetching cash data:", error);
@@ -99,19 +99,19 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
           <defs>
             <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#f97316" stopOpacity={0.1}/>
+              <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="day" 
-            tick={{ fontSize: 12 }}
-          />
-          <YAxis 
+          <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+          <YAxis
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => `${value / 1000}k`}
           />
@@ -137,34 +137,6 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
           />
         </AreaChart>
       </ResponsiveContainer>
-      
-      {/* Cash Flow Summary */}
-      <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
-        <div className="text-center">
-          <p className="font-medium text-blue-600">
-            {formatCurrency(data[0]?.openingCash || 0)}
-          </p>
-          <p className="text-muted-foreground">Kas Awal Minggu</p>
-        </div>
-        <div className="text-center">
-          <p className="font-medium text-green-600">
-            +{formatCurrency(data.reduce((sum, item) => sum + item.sales, 0))}
-          </p>
-          <p className="text-muted-foreground">Total Penjualan</p>
-        </div>
-        <div className="text-center">
-          <p className="font-medium text-red-600">
-            -{formatCurrency(data.reduce((sum, item) => sum + item.purchases, 0))}
-          </p>
-          <p className="text-muted-foreground">Total Pembelian</p>
-        </div>
-        <div className="text-center">
-          <p className="font-medium text-orange-600">
-            {formatCurrency(data[data.length - 1]?.closingCash || 0)}
-          </p>
-          <p className="text-muted-foreground">Kas Akhir</p>
-        </div>
-      </div>
     </div>
   );
 }
