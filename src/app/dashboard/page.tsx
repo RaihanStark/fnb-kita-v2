@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import useAuthStore from "@/stores/auth-store";
 import { AppLayout } from "@/components/layout/app-layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -22,8 +22,12 @@ import {
   ShoppingBag,
   PackageSearch,
   ShoppingCart,
+  Wallet,
+  TrendingUp,
+  DollarSign,
 } from "lucide-react";
 import { openingProcedureService } from "@/lib/services/opening-procedure";
+import { formatCurrency } from "@/lib/utils/format";
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -33,10 +37,16 @@ export default function DashboardPage() {
     "pending" | "in_progress" | "completed"
   >("pending");
   const [tradingActive, setTradingActive] = useState(false);
+  const [financialData, setFinancialData] = useState({
+    currentCash: 0,
+    todaySales: 0,
+    transactionCount: 0
+  });
 
   useEffect(() => {
     // Check if there's an ongoing opening procedure from API
     checkOpeningStatus();
+    fetchFinancialSummary();
   }, []);
 
   const checkOpeningStatus = async () => {
@@ -58,6 +68,48 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Error checking opening status:", error);
+    }
+  };
+
+  const fetchFinancialSummary = async () => {
+    try {
+      // Fetch today's transactions
+      const transResponse = await fetch('/api/transactions', {
+        credentials: 'include'
+      });
+      
+      if (transResponse.ok) {
+        const transactions = await transResponse.json();
+        
+        // Calculate today's sales
+        const salesTransactions = transactions.filter((t: any) => t.type === 'sales');
+        const todaySales = salesTransactions.reduce((sum: number, t: any) => 
+          sum + (Number(t.totalAmount) || 0), 0
+        );
+        
+        // Get initial cash from today's opening if available
+        let initialCash = 0;
+        const openingResult = await openingProcedureService.checkTodayOpening();
+        console.log('Opening result:', openingResult);
+        
+        if (openingResult.hasOpening && openingResult.opening?.stepData) {
+          // Step 4 is the cash setup step
+          const cashStep = openingResult.opening.stepData.step4;
+          console.log('Cash step data:', cashStep);
+          initialCash = cashStep?.totalCash || 0;
+        }
+        
+        // Kas saat ini = Modal awal (dari pembukaan) + Penjualan hari ini
+        const currentCash = initialCash + todaySales;
+        
+        setFinancialData({
+          currentCash,
+          todaySales,
+          transactionCount: salesTransactions.length
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching financial data:", error);
     }
   };
 
@@ -138,23 +190,36 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      {/* Material Design User Info Card */}
+      {/* Financial Summary Card */}
       <div className="p-4">
-        <Card className="shadow-md bg-gradient-to-r from-orange-500 to-orange-600 border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <User className="w-7 h-7 text-white" />
+        <Card className="shadow-md border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-orange-500" />
+              Laporan Keuangan Hari Ini
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Wallet className="h-4 w-4" />
+                  <span>Kas Saat Ini</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(financialData.currentCash)}
+                </p>
               </div>
-              <div className="flex-1">
-                <p className="text-white/90 text-sm font-medium">
-                  Welcome back
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Penjualan Hari Ini</span>
+                </div>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(financialData.todaySales)}
                 </p>
-                <p className="text-white text-lg font-semibold mt-1">
-                  {user?.email}
-                </p>
-                <p className="text-white/80 text-sm mt-0.5 capitalize">
-                  {user?.role || "No role assigned"}
+                <p className="text-xs text-gray-500">
+                  {financialData.transactionCount} transaksi
                 </p>
               </div>
             </div>
