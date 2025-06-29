@@ -57,6 +57,13 @@
       "when": 1751168781034,
       "tag": "0007_goofy_kinsey_walden",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1751172397560,
+      "tag": "0008_easy_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

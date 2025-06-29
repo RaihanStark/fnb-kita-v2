@@ -26,7 +26,7 @@ import {
   TrendingUp,
   DollarSign,
 } from "lucide-react";
-import { openingProcedureService } from "@/lib/services/opening-procedure";
+import { openingProcedureService, closingProcedureService } from "@/lib/services";
 import { formatCurrency } from "@/lib/utils/format";
 
 export default function DashboardPage() {
@@ -34,6 +34,9 @@ export default function DashboardPage() {
   const router = useRouter();
   const [hasOngoingOpening, setHasOngoingOpening] = useState(false);
   const [openingStatus, setOpeningStatus] = useState<
+    "pending" | "in_progress" | "completed"
+  >("pending");
+  const [closingStatus, setClosingStatus] = useState<
     "pending" | "in_progress" | "completed"
   >("pending");
   const [tradingActive, setTradingActive] = useState(false);
@@ -51,9 +54,10 @@ export default function DashboardPage() {
 
   const checkOpeningStatus = async () => {
     try {
-      const result = await openingProcedureService.checkTodayOpening();
-      if (result.hasOpening && result.opening) {
-        if (result.opening.completed) {
+      // Check opening status
+      const openingResult = await openingProcedureService.checkTodayOpening();
+      if (openingResult.hasOpening && openingResult.opening) {
+        if (openingResult.opening.completed) {
           setOpeningStatus("completed");
           setHasOngoingOpening(false);
           // If opening is completed, trading is active
@@ -66,8 +70,21 @@ export default function DashboardPage() {
         setOpeningStatus("pending");
         setHasOngoingOpening(false);
       }
+
+      // Check closing status
+      const closingResult = await closingProcedureService.checkTodayClosing();
+      if (closingResult.hasClosing && closingResult.closing) {
+        if (closingResult.closing.completed) {
+          setClosingStatus("completed");
+          setTradingActive(false); // Trading stops when closing is completed
+        } else {
+          setClosingStatus("in_progress");
+        }
+      } else {
+        setClosingStatus("pending");
+      }
     } catch (error) {
-      console.error("Error checking opening status:", error);
+      console.error("Error checking procedure status:", error);
     }
   };
 
@@ -121,6 +138,12 @@ export default function DashboardPage() {
       href: "/procedures/opening",
     },
     {
+      icon: ClipboardCheck,
+      label: "Penutupan",
+      color: "bg-red-100 text-red-600",
+      href: "/procedures/closing",
+    },
+    {
       icon: ShoppingBag,
       label: "Produk",
       color: "bg-blue-100 text-blue-600",
@@ -146,6 +169,12 @@ export default function DashboardPage() {
       label: "Opening",
       color: "bg-green-100 text-green-600",
       href: "/procedures/opening",
+    },
+    {
+      icon: ClipboardCheck,
+      label: "Penutupan",
+      color: "bg-red-100 text-red-600",
+      href: "/procedures/closing",
     },
     {
       icon: ShoppingBag,
@@ -281,13 +310,35 @@ export default function DashboardPage() {
 
               {/* Divider */}
               <div className="flex-1 mx-2">
-                <div className="h-0.5 bg-gray-300"></div>
+                <div
+                  className={`h-0.5 ${
+                    closingStatus !== "pending" || tradingActive
+                      ? "bg-blue-300"
+                      : "bg-gray-300"
+                  }`}
+                ></div>
               </div>
 
               {/* Closing */}
               <div className="flex items-center gap-1.5">
-                <Circle className="h-4 w-4 text-gray-400" />
-                <span className="font-medium text-gray-500">Penutupan</span>
+                {closingStatus === "completed" ? (
+                  <CheckCircle2 className="h-4 w-4 text-red-600" />
+                ) : closingStatus === "in_progress" ? (
+                  <Hourglass className="h-4 w-4 text-amber-600" />
+                ) : (
+                  <Circle className="h-4 w-4 text-gray-400" />
+                )}
+                <span
+                  className={`font-medium ${
+                    closingStatus === "completed"
+                      ? "text-red-700"
+                      : closingStatus === "in_progress"
+                      ? "text-amber-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Penutupan
+                </span>
               </div>
             </div>
           </CardContent>
