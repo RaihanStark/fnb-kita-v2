@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "opening_procedures_user_date_idx" ON "opening_procedures" USING btree ("user_id","date");

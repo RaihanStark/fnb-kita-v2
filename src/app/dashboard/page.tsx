@@ -1,8 +1,11 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import useAuthStore from '@/stores/auth-store'
 import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { 
   User, 
@@ -10,20 +13,42 @@ import {
   FileText, 
   Package, 
   Clock,
-  Settings
+  Settings,
+  ClipboardCheck,
+  AlertCircle
 } from 'lucide-react'
+import { openingProcedureService } from '@/lib/services/opening-procedure'
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user)
   const router = useRouter()
+  const [hasOngoingOpening, setHasOngoingOpening] = useState(false)
+
+  useEffect(() => {
+    // Check if there's an ongoing opening procedure from API
+    checkOpeningStatus()
+  }, [])
+
+  const checkOpeningStatus = async () => {
+    try {
+      const result = await openingProcedureService.checkTodayOpening()
+      if (result.hasOpening && result.opening && !result.opening.completed) {
+        setHasOngoingOpening(true)
+      }
+    } catch (error) {
+      console.error('Error checking opening status:', error)
+    }
+  }
 
   const managerFeatures = [
+    { icon: ClipboardCheck, label: 'Opening', color: 'bg-green-100 text-green-600', href: '/procedures/opening' },
     { icon: FileText, label: 'Reports', color: 'bg-purple-100 text-purple-600', href: '' },
     { icon: Package, label: 'Inventory', color: 'bg-orange-100 text-orange-600', href: '' },
     { icon: Settings, label: 'Settings', color: 'bg-gray-100 text-gray-600', href: '/settings' },
   ]
 
   const employeeFeatures = [
+    { icon: ClipboardCheck, label: 'Opening', color: 'bg-green-100 text-green-600', href: '/procedures/opening' },
     { icon: Clock, label: 'Clock In/Out', color: 'bg-blue-100 text-blue-600', href: '' },
     { icon: Package, label: 'Orders', color: 'bg-purple-100 text-purple-600', href: '' },
     { icon: Settings, label: 'Settings', color: 'bg-orange-100 text-orange-600', href: '/settings' },
@@ -52,6 +77,32 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ongoing Opening Alert */}
+      {hasOngoingOpening && (
+        <div className="px-4 pb-4">
+          <Alert className="border-amber-200 bg-amber-50">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <AlertTitle className="text-amber-800 font-semibold mb-1">
+                  Prosedur Pembukaan Belum Selesai
+                </AlertTitle>
+                <AlertDescription className="text-amber-700 text-sm">
+                  Anda memiliki prosedur pembukaan yang belum diselesaikan. Lanjutkan untuk menyelesaikan proses pembukaan hari ini.
+                </AlertDescription>
+                <Button 
+                  size="sm" 
+                  className="mt-3 bg-amber-600 hover:bg-amber-700"
+                  onClick={() => router.push('/procedures/opening')}
+                >
+                  Lanjutkan Pembukaan
+                </Button>
+              </div>
+            </div>
+          </Alert>
+        </div>
+      )}
 
       {/* Material Design Quick Actions */}
       <div className="px-4 pb-4">
