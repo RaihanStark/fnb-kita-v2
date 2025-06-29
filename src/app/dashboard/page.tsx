@@ -86,24 +86,6 @@ export default function DashboardPage() {
       color: "bg-green-100 text-green-600",
       href: "/purchases",
     },
-    {
-      icon: FileText,
-      label: "Reports",
-      color: "bg-gray-100 text-gray-600",
-      href: "",
-    },
-    {
-      icon: Package,
-      label: "Inventory",
-      color: "bg-orange-100 text-orange-600",
-      href: "",
-    },
-    {
-      icon: Settings,
-      label: "Settings",
-      color: "bg-gray-100 text-gray-600",
-      href: "/settings",
-    },
   ];
 
   const employeeFeatures = [

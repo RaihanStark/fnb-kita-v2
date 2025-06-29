@@ -12,17 +12,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Trash2, Package, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Package, AlertCircle, Droplet, Flame, PackageSearch } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface StockItem {
   id: string;
   name: string;
-  variant: string;
-  frozenCount: number;
-  readyCount: number;
-  damagedCount: number;
+  type: 'product' | 'packaging' | 'utilities' | 'consumables';
+  unit: string;
+  // For products (risol)
+  variant?: string;
+  frozenCount?: number;
+  readyCount?: number;
+  damagedCount?: number;
+  // For other items
+  currentCount?: number;
   notes: string;
 }
 
@@ -30,6 +36,13 @@ interface StockCountStepProps {
   data: any;
   onNext: (data: any) => void;
 }
+
+const typeConfig = {
+  product: { label: 'Produk', icon: Package, color: 'bg-blue-100 text-blue-700' },
+  packaging: { label: 'Kemasan', icon: Package, color: 'bg-green-100 text-green-700' },
+  utilities: { label: 'Utilitas', icon: Flame, color: 'bg-orange-100 text-orange-700' },
+  consumables: { label: 'Habis Pakai', icon: Droplet, color: 'bg-purple-100 text-purple-700' }
+};
 
 export function StockCountStep({ data, onNext }: StockCountStepProps) {
   const { toast } = useToast();
@@ -41,42 +54,57 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
 
   useEffect(() => {
     if (!data.stockItems || data.stockItems.length === 0) {
-      fetchProducts();
+      fetchAllStocks();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchAllStocks = async () => {
     try {
-      const response = await fetch('/api/products', {
+      // Fetch all stocks
+      const response = await fetch('/api/stocks', {
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to fetch products');
+      if (!response.ok) throw new Error('Failed to fetch stocks');
       
-      const products = await response.json();
+      const stocks = await response.json();
       
-      // Only use active products
-      const activeProducts = products.filter((p: any) => p.isActive);
-      
-      // Initialize stock items from products
-      const initialStockItems = activeProducts.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        variant: product.variant,
-        frozenCount: 0,
-        readyCount: 0,
-        damagedCount: 0,
-        notes: "",
-      }));
+      // Initialize stock items
+      const initialStockItems = stocks.map((stock: any) => {
+        if (stock.type === 'product') {
+          // For products (risol), use the special format
+          const variant = stock.name.includes(' - ') ? stock.name.split(' - ')[1] : '';
+          return {
+            id: stock.id,
+            name: stock.name.split(' - ')[0], // Extract product name
+            type: stock.type,
+            unit: stock.unit,
+            variant: variant,
+            frozenCount: 0,
+            readyCount: 0,
+            damagedCount: 0,
+            notes: "",
+          };
+        } else {
+          // For other items, just count current stock
+          return {
+            id: stock.id,
+            name: stock.name,
+            type: stock.type,
+            unit: stock.unit,
+            currentCount: 0,
+            notes: "",
+          };
+        }
+      });
       setStockItems(initialStockItems);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Gagal memuat produk",
+        description: "Gagal memuat persediaan",
         variant: "destructive"
       });
-      // Fallback to empty array
       setStockItems([]);
     } finally {
       setLoading(false);
@@ -89,20 +117,26 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
     );
   };
 
-  const getTotalCount = () => {
-    return stockItems.reduce(
-      (total, item) => total + item.frozenCount + item.readyCount,
-      0
-    );
+  const getTotalProductCount = () => {
+    return stockItems
+      .filter(item => item.type === 'product')
+      .reduce((total, item) => total + (item.frozenCount || 0) + (item.readyCount || 0), 0);
   };
 
   const handleSubmit = () => {
     onNext({
       stockItems,
       generalNotes,
-      totalCount: getTotalCount(),
+      totalProductCount: getTotalProductCount(),
       completedAt: new Date().toISOString(),
     });
+  };
+
+  const groupedItems = {
+    product: stockItems.filter(item => item.type === 'product'),
+    packaging: stockItems.filter(item => item.type === 'packaging'),
+    utilities: stockItems.filter(item => item.type === 'utilities'),
+    consumables: stockItems.filter(item => item.type === 'consumables'),
   };
 
   return (
@@ -113,7 +147,7 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
           Cek & Susun Stok
         </h2>
         <p className="text-sm text-gray-600 mt-1">
-          Hitung stok awal dari kulkas/frozen box
+          Hitung semua persediaan yang ada
         </p>
       </div>
 
@@ -121,105 +155,162 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
         <div className="flex gap-3">
           <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
           <AlertDescription className="text-sm">
-            Catat dengan teliti. Stok yang rusak/gagal tetap dicatat dengan
-            keterangan.
+            Catat dengan teliti. Untuk produk risol, pisahkan antara frozen/mentah, siap jual, dan rusak.
           </AlertDescription>
         </div>
       </Alert>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <p className="text-sm text-gray-500 mt-2">Memuat produk...</p>
+            <p className="text-sm text-gray-500 mt-2">Memuat persediaan...</p>
           </div>
         ) : stockItems.length === 0 ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Tidak ada produk aktif. Silakan tambahkan produk terlebih dahulu.
+              Tidak ada persediaan. Silakan tambahkan persediaan terlebih dahulu.
             </AlertDescription>
           </Alert>
         ) : (
-          stockItems.map((item, index) => (
-          <Card key={item.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  {item.name} - {item.variant || "Varian Baru"}
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label htmlFor={`frozen-${item.id}`}>Frozen/Mentah</Label>
-                  <Input
-                    id={`frozen-${item.id}`}
-                    type="number"
-                    min="0"
-                    value={item.frozenCount}
-                    onChange={(e) =>
-                      updateStockItem(
-                        item.id,
-                        "frozenCount",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`ready-${item.id}`}>Siap Jual</Label>
-                  <Input
-                    id={`ready-${item.id}`}
-                    type="number"
-                    min="0"
-                    value={item.readyCount}
-                    onChange={(e) =>
-                      updateStockItem(
-                        item.id,
-                        "readyCount",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`damaged-${item.id}`}>Rusak/Gagal</Label>
-                  <Input
-                    id={`damaged-${item.id}`}
-                    type="number"
-                    min="0"
-                    value={item.damagedCount}
-                    onChange={(e) =>
-                      updateStockItem(
-                        item.id,
-                        "damagedCount",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-              </div>
+          Object.entries(groupedItems).map(([type, items]) => {
+            if (items.length === 0) return null;
+            const config = typeConfig[type as keyof typeof typeConfig];
+            const Icon = config.icon;
 
-              {item.damagedCount > 0 && (
-                <div>
-                  <Label htmlFor={`notes-${item.id}`}>
-                    Keterangan Kerusakan
-                  </Label>
-                  <Input
-                    id={`notes-${item.id}`}
-                    placeholder="Sobek, hangus, dll..."
-                    value={item.notes}
-                    onChange={(e) =>
-                      updateStockItem(item.id, "notes", e.target.value)
-                    }
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))
+            return (
+              <div key={type} className="space-y-3">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {config.label}
+                </h3>
+                
+                {items.map((item) => (
+                  <Card key={item.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">
+                          {item.name} {item.variant && `- ${item.variant}`}
+                        </CardTitle>
+                        <Badge variant="outline" className="text-xs">
+                          {item.unit}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {item.type === 'product' ? (
+                        // Special format for products (risol)
+                        <>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <Label htmlFor={`frozen-${item.id}`}>Frozen/Mentah</Label>
+                              <Input
+                                id={`frozen-${item.id}`}
+                                type="number"
+                                min="0"
+                                value={item.frozenCount || 0}
+                                onChange={(e) =>
+                                  updateStockItem(
+                                    item.id,
+                                    "frozenCount",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`ready-${item.id}`}>Siap Jual</Label>
+                              <Input
+                                id={`ready-${item.id}`}
+                                type="number"
+                                min="0"
+                                value={item.readyCount || 0}
+                                onChange={(e) =>
+                                  updateStockItem(
+                                    item.id,
+                                    "readyCount",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`damaged-${item.id}`}>Rusak/Gagal</Label>
+                              <Input
+                                id={`damaged-${item.id}`}
+                                type="number"
+                                min="0"
+                                value={item.damagedCount || 0}
+                                onChange={(e) =>
+                                  updateStockItem(
+                                    item.id,
+                                    "damagedCount",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          {(item.damagedCount || 0) > 0 && (
+                            <div>
+                              <Label htmlFor={`notes-${item.id}`}>
+                                Keterangan Kerusakan
+                              </Label>
+                              <Input
+                                id={`notes-${item.id}`}
+                                placeholder="Sobek, hangus, dll..."
+                                value={item.notes}
+                                onChange={(e) =>
+                                  updateStockItem(item.id, "notes", e.target.value)
+                                }
+                              />
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        // Simple format for other items
+                        <>
+                          <div>
+                            <Label htmlFor={`current-${item.id}`}>Jumlah Saat Ini</Label>
+                            <Input
+                              id={`current-${item.id}`}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.currentCount || 0}
+                              onChange={(e) =>
+                                updateStockItem(
+                                  item.id,
+                                  "currentCount",
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`notes-${item.id}`}>
+                              Catatan (opsional)
+                            </Label>
+                            <Input
+                              id={`notes-${item.id}`}
+                              placeholder="Catatan jika diperlukan..."
+                              value={item.notes}
+                              onChange={(e) =>
+                                updateStockItem(item.id, "notes", e.target.value)
+                              }
+                            />
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -228,20 +319,51 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
           <CardTitle className="text-base">Ringkasan Stok</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">Total: {getTotalCount()} pcs</div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {stockItems.filter((item) => item.frozenCount > 0).length > 0 &&
-              `${stockItems.reduce(
-                (sum, item) => sum + item.frozenCount,
-                0
-              )} frozen, `}
-            {stockItems.reduce((sum, item) => sum + item.readyCount, 0)} siap
-            jual
-            {stockItems.reduce((sum, item) => sum + item.damagedCount, 0) > 0 &&
-              `, ${stockItems.reduce(
-                (sum, item) => sum + item.damagedCount,
-                0
-              )} rusak`}
+          <div className="space-y-2">
+            <div>
+              <div className="text-lg font-bold">
+                Total Produk: {getTotalProductCount()} pcs
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {stockItems.filter((item) => item.type === 'product' && (item.frozenCount || 0) > 0).length > 0 &&
+                  `${stockItems
+                    .filter(item => item.type === 'product')
+                    .reduce((sum, item) => sum + (item.frozenCount || 0), 0)} frozen, `}
+                {stockItems
+                  .filter(item => item.type === 'product')
+                  .reduce((sum, item) => sum + (item.readyCount || 0), 0)} siap jual
+                {stockItems
+                  .filter(item => item.type === 'product')
+                  .reduce((sum, item) => sum + (item.damagedCount || 0), 0) > 0 &&
+                  `, ${stockItems
+                    .filter(item => item.type === 'product')
+                    .reduce((sum, item) => sum + (item.damagedCount || 0), 0)} rusak`}
+              </div>
+            </div>
+
+            {/* Summary for other items */}
+            {Object.entries(groupedItems).map(([type, items]) => {
+              if (type === 'product' || items.length === 0) return null;
+              const config = typeConfig[type as keyof typeof typeConfig];
+              const hasCount = items.some(item => (item.currentCount || 0) > 0);
+              
+              if (!hasCount) return null;
+
+              return (
+                <div key={type} className="pt-2 border-t">
+                  <div className="font-medium">{config.label}:</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    {items
+                      .filter(item => (item.currentCount || 0) > 0)
+                      .map(item => (
+                        <div key={item.id}>
+                          {item.name}: {item.currentCount} {item.unit}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

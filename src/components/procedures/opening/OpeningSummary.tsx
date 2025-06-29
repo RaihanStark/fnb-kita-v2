@@ -43,17 +43,18 @@ export function OpeningSummary({ data, onRestart }: OpeningSummaryProps) {
   );
 
 
-  const getTotalStock = () => {
+  const getTotalProductStock = () => {
     const stockData = step2Data?.stockItems || [];
-    return stockData.reduce((total: number, item: any) => {
-      if (item.frozenCount !== undefined) {
-        // Old format
+    return stockData
+      .filter((item: any) => item.type === 'product')
+      .reduce((total: number, item: any) => {
         return total + (item.frozenCount || 0) + (item.readyCount || 0);
-      } else {
-        // Should not happen with current format, but just in case
-        return total + (item.count || 0);
-      }
-    }, 0);
+      }, 0);
+  };
+
+  const getOtherStocks = () => {
+    const stockData = step2Data?.stockItems || [];
+    return stockData.filter((item: any) => item.type !== 'product' && (item.currentCount || 0) > 0);
   };
 
   return (
@@ -107,8 +108,9 @@ export function OpeningSummary({ data, onRestart }: OpeningSummaryProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="text-2xl font-bold">{getTotalStock()} pcs</div>
+              <div className="text-2xl font-bold">Produk: {getTotalProductStock()} pcs</div>
               {step2Data?.stockItems
+                ?.filter((item: any) => item.type === 'product')
                 ?.map((item: any) => {
                   const count =
                     (item.frozenCount || 0) + (item.readyCount || 0);
@@ -131,6 +133,20 @@ export function OpeningSummary({ data, onRestart }: OpeningSummaryProps) {
                   );
                 })
                 .filter(Boolean)}
+              
+              {getOtherStocks().length > 0 && (
+                <>
+                  <div className="border-t pt-2 mt-3">
+                    <div className="font-medium mb-2">Persediaan Lainnya:</div>
+                    {getOtherStocks().map((item: any) => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{item.name}</span>
+                        <span>{item.currentCount} {item.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
