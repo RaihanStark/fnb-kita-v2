@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, Settings } from 'lucide-react'
+import { Home, Settings, ShoppingCart, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -9,6 +9,12 @@ const tabs = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: Home,
+  },
+  {
+    name: 'Transaksi',
+    href: '/transactions',
+    icon: ShoppingCart,
+    isMain: true,
   },
   {
     name: 'Settings',
@@ -38,23 +44,23 @@ export function BottomNavigation() {
                   "focus:outline-none"
                 )}
               >
-                <div className="flex flex-col items-center gap-1 px-3 py-1 transition-all duration-200">
-                  <Icon 
-                    className={cn(
-                      "w-6 h-6 transition-all duration-200",
-                      isActive ? "text-orange-600" : "text-gray-600"
-                    )}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  <span 
-                    className={cn(
-                      "text-xs font-medium transition-all duration-200 whitespace-nowrap",
-                      isActive ? "text-orange-600" : "text-gray-600"
-                    )}
-                  >
-                    {tab.name}
-                  </span>
-                </div>
+                  <div className="flex flex-col items-center gap-1 px-3 py-1 transition-all duration-200">
+                    <Icon 
+                      className={cn(
+                        "w-6 h-6 transition-all duration-200",
+                        isActive ? "text-orange-600" : "text-gray-600"
+                      )}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span 
+                      className={cn(
+                        "text-xs font-medium transition-all duration-200 whitespace-nowrap",
+                        isActive ? "text-orange-600" : "text-gray-600"
+                      )}
+                    >
+                      {tab.name}
+                    </span>
+                  </div>
               </button>
             )
           })}

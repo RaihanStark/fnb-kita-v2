@@ -17,6 +17,7 @@ import {
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { formatDateUTC7, formatTimeWIB } from "@/lib/utils/format-date";
+import { formatCurrency } from "@/lib/utils/format";
 
 interface OpeningSummaryProps {
   data: Record<number, any>;
@@ -41,14 +42,6 @@ export function OpeningSummary({ data, onRestart }: OpeningSummaryProps) {
     (endTime.getTime() - startTime.getTime()) / 1000 / 60
   );
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getTotalStock = () => {
     const stockData = step2Data?.stockItems || [];

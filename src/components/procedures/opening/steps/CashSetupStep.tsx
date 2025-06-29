@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Banknote, Calculator } from "lucide-react";
+import { formatCurrency } from "@/lib/utils/format";
 
 interface Denomination {
   value: number;
@@ -50,14 +51,6 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const handleSubmit = () => {
     onNext({
