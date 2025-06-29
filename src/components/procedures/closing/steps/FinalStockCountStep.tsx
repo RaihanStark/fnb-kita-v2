@@ -208,11 +208,8 @@ export function FinalStockCountStep({
   };
 
   const getExpectedStock = (item: StockItem) => {
-    // Expected = Opening + Purchased - Sales
-    return Math.max(
-      0,
-      item.openingStock + item.purchasedCount - item.soldCount
-    );
+    // Expected = Opening - Sold
+    return Math.max(0, item.openingStock - item.soldCount);
   };
 
   const getCurrentTotal = (item: StockItem) => {
