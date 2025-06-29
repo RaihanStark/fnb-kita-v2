@@ -4,3 +4,4 @@ export * from './opening-procedures';
 export * from './transactions';
 export * from './products';
 export * from './stocks';
+export * from './purchases';

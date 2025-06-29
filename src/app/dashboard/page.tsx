@@ -21,6 +21,7 @@ import {
   Hourglass,
   ShoppingBag,
   PackageSearch,
+  ShoppingCart,
 } from "lucide-react";
 import { openingProcedureService } from "@/lib/services/opening-procedure";
 
@@ -80,6 +81,12 @@ export default function DashboardPage() {
       href: "/stocks",
     },
     {
+      icon: ShoppingCart,
+      label: "Pembelian",
+      color: "bg-green-100 text-green-600",
+      href: "/purchases",
+    },
+    {
       icon: FileText,
       label: "Reports",
       color: "bg-gray-100 text-gray-600",
@@ -117,6 +124,12 @@ export default function DashboardPage() {
       label: "Persediaan",
       color: "bg-purple-100 text-purple-600",
       href: "/stocks",
+    },
+    {
+      icon: ShoppingCart,
+      label: "Pembelian",
+      color: "bg-green-100 text-green-600",
+      href: "/purchases",
     },
     {
       icon: Clock,
