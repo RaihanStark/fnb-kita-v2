@@ -1,6 +1,6 @@
 // JWT configuration
 export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-export const ACCESS_TOKEN_EXPIRY = '15m';
+export const ACCESS_TOKEN_EXPIRY = '24h'; // 24 hours
 export const REFRESH_TOKEN_EXPIRY = '7d';
 
 // Cookie names

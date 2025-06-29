@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Set cookies
     response.cookies.set(ACCESS_TOKEN_COOKIE, accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 24 * 60 * 60, // 24 hours
     });
 
     response.cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, {
