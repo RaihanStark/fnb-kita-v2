@@ -28,6 +28,18 @@ export async function apiRequest<T = any>(
       // If response is not JSON, use status text
       errorMessage = response.statusText || errorMessage;
     }
+
+    // Handle 401 Unauthorized - logout and redirect to login
+    if (response.status === 401) {
+      // Clear any stored auth data
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
+      // Redirect to login page only if not already there
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
     throw new ApiError(response.status, errorMessage);
   }
 
