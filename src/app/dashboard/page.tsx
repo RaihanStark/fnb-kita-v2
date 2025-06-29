@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const [hasOngoingOpening, setHasOngoingOpening] = useState(false);
+  const [hasOngoingClosing, setHasOngoingClosing] = useState(false);
   const [openingStatus, setOpeningStatus] = useState<
     "pending" | "in_progress" | "completed"
   >("pending");
@@ -76,12 +77,15 @@ export default function DashboardPage() {
       if (closingResult.hasClosing && closingResult.closing) {
         if (closingResult.closing.completed) {
           setClosingStatus("completed");
+          setHasOngoingClosing(false);
           setTradingActive(false); // Trading stops when closing is completed
         } else {
           setClosingStatus("in_progress");
+          setHasOngoingClosing(true);
         }
       } else {
         setClosingStatus("pending");
+        setHasOngoingClosing(false);
       }
     } catch (error) {
       console.error("Error checking procedure status:", error);
@@ -365,6 +369,33 @@ export default function DashboardPage() {
                   onClick={() => router.push("/procedures/opening")}
                 >
                   Lanjutkan Pembukaan
+                </Button>
+              </div>
+            </div>
+          </Alert>
+        </div>
+      )}
+
+      {/* Ongoing Closing Alert */}
+      {hasOngoingClosing && (
+        <div className="px-4 pb-4">
+          <Alert className="border-red-200 bg-red-50">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <AlertTitle className="text-red-800 font-semibold mb-1">
+                  Prosedur Penutupan Sedang Berlangsung
+                </AlertTitle>
+                <AlertDescription className="text-red-700 text-sm">
+                  Anda memiliki prosedur penutupan yang belum diselesaikan.
+                  Lanjutkan untuk menyelesaikan proses penutupan hari ini.
+                </AlertDescription>
+                <Button
+                  size="sm"
+                  className="mt-3 bg-red-600 hover:bg-red-700"
+                  onClick={() => router.push("/procedures/closing")}
+                >
+                  Lanjutkan Penutupan
                 </Button>
               </div>
             </div>
