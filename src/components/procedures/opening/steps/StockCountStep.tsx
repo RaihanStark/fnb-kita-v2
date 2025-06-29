@@ -128,20 +128,6 @@ export function StockCountStep({ data, onNext }: StockCountStepProps) {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {index >= 3 && (
-                <div>
-                  <Label htmlFor={`variant-${item.id}`}>Varian</Label>
-                  <Input
-                    id={`variant-${item.id}`}
-                    placeholder="Nama varian"
-                    value={item.variant}
-                    onChange={(e) =>
-                      updateStockItem(item.id, "variant", e.target.value)
-                    }
-                  />
-                </div>
-              )}
-
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label htmlFor={`frozen-${item.id}`}>Frozen/Mentah</Label>
