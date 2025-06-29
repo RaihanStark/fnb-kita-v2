@@ -1,4 +1,4 @@
-import { format, addHours } from 'date-fns';
+import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 /**
@@ -9,9 +9,10 @@ import { id } from 'date-fns/locale';
  */
 export function formatDateUTC7(date: Date | string, formatStr: string = 'dd MMM yyyy HH:mm'): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  // Add 7 hours to convert from UTC to UTC+7
-  const utc7Date = addHours(dateObj, 7);
-  return format(utc7Date, formatStr, { locale: id });
+  
+  // No need to manually add hours - just format in the correct timezone
+  // The Date object already handles timezone conversion when created from UTC string
+  return format(dateObj, formatStr, { locale: id });
 }
 
 /**

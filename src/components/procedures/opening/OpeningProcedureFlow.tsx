@@ -55,6 +55,9 @@ export function OpeningProcedureFlow() {
         if (checkResult.opening.completed) {
           // Opening already completed today
           setAlreadyCompletedToday(true);
+          // Also load the data to show summary
+          setStepData(checkResult.opening.stepData || {});
+          setOpeningId(checkResult.opening.id);
         } else {
           // Continue existing opening
           setOpeningId(checkResult.opening.id);
@@ -211,28 +214,8 @@ export function OpeningProcedureFlow() {
   }
 
   if (alreadyCompletedToday) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Alert className="border-green-200 bg-green-50">
-          <div className="flex gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-            <div>
-              <AlertTitle className="text-green-800">Pembukaan Sudah Selesai</AlertTitle>
-              <AlertDescription className="text-green-700">
-                Anda sudah menyelesaikan prosedur pembukaan hari ini. Pembukaan hanya dapat dilakukan sekali per hari.
-              </AlertDescription>
-              <Button 
-                onClick={() => router.push('/dashboard')} 
-                className="mt-3"
-                variant="outline"
-              >
-                Kembali ke Dashboard
-              </Button>
-            </div>
-          </div>
-        </Alert>
-      </div>
-    );
+    // Show the summary of completed opening
+    return <OpeningSummary data={stepData} onRestart={() => router.push('/dashboard')} />;
   }
 
   if (isCompleted) {
