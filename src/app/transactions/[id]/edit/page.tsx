@@ -198,29 +198,21 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <AppLayout>
+    <AppLayout
+      title="Edit Transaksi"
+      showBackButton
+      trailingActions={
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDelete}
+          disabled={isSubmitting}
+        >
+          Hapus
+        </Button>
+      }
+    >
       <div className="p-4 pb-24">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-semibold">Edit Transaksi</h1>
-          </div>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isSubmitting}
-          >
-            Hapus
-          </Button>
-        </div>
 
         {/* Transaction Type */}
         <Card className="mb-6">
