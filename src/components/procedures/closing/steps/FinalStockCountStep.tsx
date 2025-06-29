@@ -129,9 +129,12 @@ export function FinalStockCountStep({
 
       // Get today's purchases to calculate purchased amounts
       const todayStr = getDateInUTC7();
-      const purchaseResponse = await fetch(`/api/purchases/by-date?date=${todayStr}`, {
-        credentials: "include",
-      });
+      const purchaseResponse = await fetch(
+        `/api/purchases/by-date?date=${todayStr}`,
+        {
+          credentials: "include",
+        }
+      );
 
       const purchaseData: Record<string, number> = {};
 
@@ -147,7 +150,8 @@ export function FinalStockCountStep({
             purchase.items.forEach((item: any) => {
               if (item.stockId) {
                 purchaseData[item.stockId] =
-                  (purchaseData[item.stockId] || 0) + (parseFloat(item.quantity) || 0);
+                  (purchaseData[item.stockId] || 0) +
+                  (parseFloat(item.quantity) || 0);
               }
             });
           }

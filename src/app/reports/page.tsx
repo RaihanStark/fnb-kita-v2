@@ -11,11 +11,13 @@ import {
   Package, 
   Calendar,
   Download,
-  RefreshCw
+  RefreshCw,
+  PieChart
 } from "lucide-react";
 import { WeeklySalesChart } from "@/components/reports/WeeklySalesChart";
 import { WeeklyCashChart } from "@/components/reports/WeeklyCashChart";
 import { WeeklyStockChart } from "@/components/reports/WeeklyStockChart";
+import { RisolSalesPieChart } from "@/components/reports/RisolSalesPieChart";
 import { formatCurrency } from "@/lib/utils/format";
 
 export default function ReportsPage() {
@@ -230,6 +232,19 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <WeeklyStockChart period={selectedPeriod} />
+            </CardContent>
+          </Card>
+
+          {/* Risol Sales Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Proporsi Penjualan Risol per Varian
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RisolSalesPieChart period={selectedPeriod} />
             </CardContent>
           </Card>
         </div>

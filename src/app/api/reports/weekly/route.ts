@@ -210,6 +210,30 @@ export async function GET(request: NextRequest) {
       currentDate.setDate(currentDate.getDate() + 1)
     }
 
+    // Calculate risol sales by variant
+    const risolSalesByVariant: { [key: string]: number } = {}
+    
+    // Filter only sales transactions
+    const salesTransactions = allTransactions.filter(t => t.type === 'sales')
+    
+    salesTransactions.forEach(trans => {
+      if (trans.items && Array.isArray(trans.items)) {
+        trans.items.forEach((item: any) => {
+          // Only count items with "Risol" in the name
+          if (item.name && item.name.toLowerCase().includes('risol')) {
+            const variant = item.variant || 'Unknown'
+            risolSalesByVariant[variant] = (risolSalesByVariant[variant] || 0) + (item.quantity || 0)
+          }
+        })
+      }
+    })
+    
+    // Convert to array format for the pie chart
+    const risolSales = Object.entries(risolSalesByVariant).map(([variant, quantity]) => ({
+      variant,
+      quantity
+    })).sort((a, b) => b.quantity - a.quantity) // Sort by quantity descending
+
     // Calculate summary statistics
     const summary = {
       totalSales: dailyData.reduce((sum, day) => sum + day.sales, 0),
@@ -228,7 +252,8 @@ export async function GET(request: NextRequest) {
       startDate: startDateStr,
       endDate: endDateStr,
       dailyData,
-      summary
+      summary,
+      risolSales
     })
   } catch (error) {
     console.error('Error fetching weekly reports:', error)
