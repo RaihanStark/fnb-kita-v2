@@ -213,8 +213,11 @@ export function FinalStockCountStep({
   };
 
   const getExpectedStock = (item: StockItem) => {
-    // Expected = Opening - Sold
-    return Math.max(0, item.openingStock - item.soldCount);
+    // Expected = (Opening + Purchased) - Sold
+    return Math.max(
+      0,
+      (item.openingStock || 0) + (item.purchasedCount || 0) - item.soldCount
+    );
   };
 
   const getCurrentTotal = (item: StockItem) => {
@@ -317,11 +320,7 @@ export function FinalStockCountStep({
                           min={0}
                           value={item.frozenCount || 0}
                           onChange={(value) =>
-                            updateStockItem(
-                              item.id,
-                              "frozenCount",
-                              value || 0
-                            )
+                            updateStockItem(item.id, "frozenCount", value || 0)
                           }
                           placeholder="0"
                           allowDecimals={false}
@@ -333,11 +332,7 @@ export function FinalStockCountStep({
                           min={0}
                           value={item.readyCount || 0}
                           onChange={(value) =>
-                            updateStockItem(
-                              item.id,
-                              "readyCount",
-                              value || 0
-                            )
+                            updateStockItem(item.id, "readyCount", value || 0)
                           }
                           placeholder="0"
                           allowDecimals={false}
@@ -349,11 +344,7 @@ export function FinalStockCountStep({
                           min={0}
                           value={item.damagedCount || 0}
                           onChange={(value) =>
-                            updateStockItem(
-                              item.id,
-                              "damagedCount",
-                              value || 0
-                            )
+                            updateStockItem(item.id, "damagedCount", value || 0)
                           }
                           placeholder="0"
                           allowDecimals={false}
@@ -374,11 +365,7 @@ export function FinalStockCountStep({
                       min={0}
                       value={item.currentCount || 0}
                       onChange={(value) =>
-                        updateStockItem(
-                          item.id,
-                          "currentCount",
-                          value || 0
-                        )
+                        updateStockItem(item.id, "currentCount", value || 0)
                       }
                       className="w-32"
                       placeholder="0"
