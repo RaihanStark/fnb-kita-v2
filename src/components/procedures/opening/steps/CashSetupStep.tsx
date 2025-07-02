@@ -36,6 +36,9 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
       { value: 5000, count: 0, label: "Rp 5.000" },
       { value: 2000, count: 0, label: "Rp 2.000" },
       { value: 1000, count: 0, label: "Rp 1.000" },
+      { value: 500, count: 0, label: "Rp 500" },
+      { value: 200, count: 0, label: "Rp 200" },
+      { value: 100, count: 0, label: "Rp 100" },
     ]
   );
 
