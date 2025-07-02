@@ -140,6 +140,19 @@ export default function NewTransactionPage() {
     );
 
     if (existingItem) {
+      // Check if we can add more
+      const stock = getProductStock(product);
+      const maxStock = stock ? parseFloat(stock.currentStock) : 0;
+      
+      if (existingItem.quantity >= maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${product.name} ${product.variant} hanya tersedia ${maxStock} pcs`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       updateQuantity(items.indexOf(existingItem), 1);
     } else {
       setItems([
@@ -161,6 +174,18 @@ export default function NewTransactionPage() {
     );
 
     if (existingItem) {
+      // Check if we can add more
+      const maxStock = parseFloat(packaging.currentStock);
+      
+      if (existingItem.quantity >= maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${packaging.name} hanya tersedia ${maxStock} ${packaging.unit}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       updateQuantity(items.indexOf(existingItem), 1);
     } else {
       setItems([
@@ -179,7 +204,45 @@ export default function NewTransactionPage() {
 
   const updateQuantity = (index: number, change: number) => {
     const newItems = [...items];
-    newItems[index].quantity = Math.max(0, newItems[index].quantity + change);
+    const item = newItems[index];
+    const newQuantity = item.quantity + change;
+
+    // Check stock limit for products (not packaging)
+    if (!item.isPackaging && change > 0) {
+      const stock = getProductStock({ 
+        id: item.productId, 
+        name: item.name, 
+        variant: item.variant 
+      } as Product);
+      
+      const maxStock = stock ? parseFloat(stock.currentStock) : 0;
+      
+      if (newQuantity > maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${item.name} ${item.variant} hanya tersedia ${maxStock} pcs`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // For packaging items, check stock limit
+    if (item.isPackaging && change > 0) {
+      const packagingStock = packagingStocks.find(p => p.id === item.productId);
+      const maxStock = packagingStock ? parseFloat(packagingStock.currentStock) : 0;
+      
+      if (newQuantity > maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${item.name} hanya tersedia ${maxStock} ${item.unit}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    newItems[index].quantity = Math.max(0, newQuantity);
 
     if (newItems[index].quantity === 0) {
       newItems.splice(index, 1);
@@ -188,11 +251,6 @@ export default function NewTransactionPage() {
     setItems(newItems);
   };
 
-  const updatePrice = (index: number, price: number) => {
-    const newItems = [...items];
-    newItems[index].price = price;
-    setItems(newItems);
-  };
 
   const removeItem = (index: number) => {
     const newItems = [...items];
@@ -372,14 +430,22 @@ export default function NewTransactionPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(product)}
-                    className="justify-start flex-col items-start h-auto py-2"
-                    disabled={getProductStock(product)?.currentStock === "0"}
+                    className={`justify-start flex-col items-start h-auto py-2 ${
+                      !getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={!getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0}
                   >
                     <div className="flex items-center">
                       <Plus className="w-4 h-4 mr-1" />
                       {product.name} {product.variant}
                     </div>
-                    <span className="text-xs text-gray-500">
+                    <span className={`text-xs ${
+                      !getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0
+                        ? "text-red-500"
+                        : "text-gray-500"
+                    }`}>
                       Stok: {getProductStock(product)?.currentStock || "0"} pcs
                     </span>
                   </Button>
@@ -439,77 +505,84 @@ export default function NewTransactionPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {items.map((item, index) => (
-                  <div key={index} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <span className="font-medium">
-                          {item.name} {item.variant}
-                        </span>
-                        {item.isPackaging && (
-                          <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                            Kemasan
+                {items.map((item, index) => {
+                  // Get max stock for this item
+                  let maxStock = Infinity;
+                  if (!item.isPackaging) {
+                    const stock = getProductStock({ 
+                      id: item.productId, 
+                      name: item.name, 
+                      variant: item.variant 
+                    } as Product);
+                    maxStock = stock ? parseFloat(stock.currentStock) : 0;
+                  } else {
+                    const packagingStock = packagingStocks.find(p => p.id === item.productId);
+                    maxStock = packagingStock ? parseFloat(packagingStock.currentStock) : 0;
+                  }
+                  
+                  const isAtMaxStock = item.quantity >= maxStock;
+                  
+                  return (
+                    <div key={index} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="font-medium">
+                            {item.name} {item.variant}
                           </span>
-                        )}
+                          {item.isPackaging && (
+                            <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                              Kemasan
+                            </span>
+                          )}
+                          <span className="ml-2 text-xs text-gray-500">
+                            (Maks: {maxStock} {item.unit || 'pcs'})
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeItem(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => removeItem(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(index, -1)}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <span className="w-12 text-center font-medium">
+                            {item.quantity}{" "}
+                            {item.unit && item.unit !== "pcs" ? item.unit : ""}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={`h-8 w-8 ${isAtMaxStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={() => updateQuantity(index, 1)}
+                            disabled={isAtMaxStock}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(index, -1)}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-12 text-center font-medium">
-                          {item.quantity}{" "}
-                          {item.unit && item.unit !== "pcs" ? item.unit : ""}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(index, 1)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      {type === "sales" && !item.isPackaging && (
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-sm text-gray-600">@</span>
-                          <NumberInput
-                            value={item.price}
-                            onChange={(value) =>
-                              updatePrice(index, value || 0)
-                            }
-                            className="h-8"
-                            placeholder="Harga"
-                            min={0}
-                            allowDecimals={true}
-                          />
+                      {type === "sales" && item.price && !item.isPackaging && (
+                        <div className="text-sm text-gray-600 mt-2">
+                          <div>@ {formatCurrency(item.price)} × {item.quantity} = {formatCurrency(item.price * item.quantity)}</div>
                         </div>
                       )}
                     </div>
-
-                    {type === "sales" && item.price && !item.isPackaging && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Subtotal: {formatCurrency(item.price * item.quantity)}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {type === "sales" && (

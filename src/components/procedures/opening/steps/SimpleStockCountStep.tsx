@@ -170,7 +170,10 @@ export function SimpleStockCountStep({
   // Get items with stock discrepancies (both missing and excess)
   const getDiscrepancyItems = () => {
     const productDiscrepancies = stockItems
-      .filter((item) => item.currentStock !== item.totalCount)
+      .filter((item) => {
+        const diff = item.currentStock - item.totalCount;
+        return diff !== 0; // Only show if there's an actual discrepancy
+      })
       .map((item) => ({
         ...item,
         type: "product" as const,
@@ -182,7 +185,10 @@ export function SimpleStockCountStep({
       }));
 
     const otherDiscrepancies = otherItems
-      .filter((item) => item.currentStock !== item.count)
+      .filter((item) => {
+        const diff = item.currentStock - item.count;
+        return diff !== 0; // Only show if there's an actual discrepancy
+      })
       .map((item) => ({
         ...item,
         type: item.type,
