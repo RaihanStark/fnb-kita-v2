@@ -43,7 +43,16 @@ export function SimpleStockCountStep({
 
   useEffect(() => {
     if (data.stockItems && data.stockItems.length > 0) {
-      // Convert existing data to simple format
+      // Load existing data with current stock
+      loadExistingDataWithCurrentStock();
+    } else {
+      fetchProducts();
+    }
+  }, []);
+
+  const loadExistingDataWithCurrentStock = async () => {
+    try {
+      // Convert existing data to simple format first
       const simpleProductItems = data.stockItems
         .filter((item: any) => item.type === "product")
         .map((item: any) => ({
@@ -51,7 +60,84 @@ export function SimpleStockCountStep({
           name: item.name,
           variant: item.variant || "",
           totalCount: (item.frozenCount || 0) + (item.readyCount || 0),
-          currentStock: 0, // Will be fetched if needed
+          currentStock: 0, // Will be updated with actual current stock
+        }));
+
+      const simpleOtherItems = data.stockItems
+        .filter((item: any) => item.type !== "product")
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          unit: item.unit,
+          count: item.currentCount || 0,
+          currentStock: 0, // Will be updated with actual current stock
+        }));
+
+      // Fetch current stock data
+      const stocksResponse = await fetch("/api/stocks", {
+        credentials: "include",
+      });
+
+      if (stocksResponse.ok) {
+        const stocks = await stocksResponse.json();
+
+        // Create maps for current stock lookup
+        const productStocksMap = new Map();
+        const otherStocksMap = new Map();
+
+        stocks.forEach((stock: any) => {
+          if (stock.type === "product") {
+            productStocksMap.set(stock.name, stock.currentStock || 0);
+          } else {
+            otherStocksMap.set(stock.name, stock.currentStock || 0);
+          }
+        });
+
+        // Update product items with current stock
+        const updatedProductItems = simpleProductItems.map(
+          (item: StockItem) => {
+            const stockKey = `${item.name} - ${item.variant}`;
+            return {
+              ...item,
+              currentStock: productStocksMap.get(stockKey) || 0,
+            };
+          }
+        );
+
+        // Update other items with current stock
+        const updatedOtherItems = simpleOtherItems.map((item: OtherItem) => ({
+          ...item,
+          currentStock: otherStocksMap.get(item.name) || 0,
+        }));
+
+        setStockItems(updatedProductItems);
+        setOtherItems(updatedOtherItems);
+      } else {
+        // If stocks API fails, use the data without current stock
+        setStockItems(simpleProductItems);
+        setOtherItems(simpleOtherItems);
+      }
+
+      // Load discrepancy notes
+      const notes: Record<string, string> = {};
+      data.stockItems.forEach((item: any) => {
+        if (item.notes) {
+          notes[item.id] = item.notes;
+        }
+      });
+      setDiscrepancyNotes(notes);
+    } catch (error) {
+      console.error("Error loading existing data with current stock:", error);
+      // Fallback to loading without current stock
+      const simpleProductItems = data.stockItems
+        .filter((item: any) => item.type === "product")
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          variant: item.variant || "",
+          totalCount: (item.frozenCount || 0) + (item.readyCount || 0),
+          currentStock: 0,
         }));
 
       const simpleOtherItems = data.stockItems
@@ -67,11 +153,19 @@ export function SimpleStockCountStep({
 
       setStockItems(simpleProductItems);
       setOtherItems(simpleOtherItems);
+
+      // Load discrepancy notes
+      const notes: Record<string, string> = {};
+      data.stockItems.forEach((item: any) => {
+        if (item.notes) {
+          notes[item.id] = item.notes;
+        }
+      });
+      setDiscrepancyNotes(notes);
+    } finally {
       setLoading(false);
-    } else {
-      fetchProducts();
     }
-  }, []);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -177,6 +271,7 @@ export function SimpleStockCountStep({
       .map((item) => ({
         ...item,
         type: "product" as const,
+        unit: "pcs" as const, // Add unit for products
         discrepancy: item.currentStock - item.totalCount,
         discrepancyType:
           item.totalCount > item.currentStock

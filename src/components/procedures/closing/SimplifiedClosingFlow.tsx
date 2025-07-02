@@ -42,13 +42,43 @@ export function SimplifiedClosingFlow() {
   const [stepData, setStepData] = useState<Record<number, any>>({});
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isFinalized, setIsFinalized] = useState(false);
   const [closingId, setClosingId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [alreadyCompletedToday, setAlreadyCompletedToday] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
+
+  // Helper function to convert API step data format to component format
+  const mapStepDataFromAPI = (apiStepData: any): Record<number, any> => {
+    const mappedData: Record<number, any> = {};
+    if (!apiStepData) return mappedData;
+
+    // Map step2, step5 to 2, 5
+    STEPS.forEach((step) => {
+      const apiKey = `step${step.id}`;
+      if (apiStepData[apiKey]) {
+        mappedData[step.id] = apiStepData[apiKey];
+      }
+    });
+
+    return mappedData;
+  };
+
+  // Helper function to convert component step data format to API format
+  const mapStepDataToAPI = (componentStepData: Record<number, any>): any => {
+    const apiData: any = {};
+
+    Object.entries(componentStepData).forEach(([stepId, data]) => {
+      const apiKey = `step${stepId}`;
+      apiData[apiKey] = data;
+    });
+
+    return apiData;
+  };
 
   // Check for existing closing or start new one
   useEffect(() => {
@@ -70,18 +100,28 @@ export function SimplifiedClosingFlow() {
         if (checkResult.closing.completed) {
           // Closing already completed today
           setAlreadyCompletedToday(true);
-          setStepData(checkResult.closing.stepData || {});
+          const mappedData = mapStepDataFromAPI(checkResult.closing.stepData);
+          console.log("Loading completed closing data:", {
+            original: checkResult.closing.stepData,
+            mapped: mappedData,
+          });
+          setStepData(mappedData);
           setClosingId(checkResult.closing.id);
         } else {
           // Continue existing closing
           setClosingId(checkResult.closing.id);
-          setStepData(checkResult.closing.stepData || {});
+          const mappedData = mapStepDataFromAPI(checkResult.closing.stepData);
+          console.log("Loading existing closing data:", {
+            original: checkResult.closing.stepData,
+            mapped: mappedData,
+          });
+          setStepData(mappedData);
 
           // Determine which steps are completed
           const completed = new Set<number>();
           STEPS.forEach((step) => {
             const stepKey = `step${step.id}`;
-            if (checkResult.closing.stepData?.[stepKey]?.completedAt) {
+            if (checkResult.closing?.stepData?.[stepKey]?.completedAt) {
               completed.add(step.id);
             }
           });
@@ -112,6 +152,7 @@ export function SimplifiedClosingFlow() {
         setStepData({});
         setCompletedSteps(new Set());
         setIsCompleted(false);
+        setIsFinalized(false);
       } else {
         // If closing already exists, refresh the page to load it
         if (startResult.error?.includes("already exists")) {
@@ -143,7 +184,7 @@ export function SimplifiedClosingFlow() {
       const newStepData = { ...stepData, [stepId]: data };
       setStepData(newStepData);
 
-      // Save to API
+      // Save to API - the API expects the raw data, not the mapped format
       const updateResult = await closingProcedureService.updateStep(
         closingId,
         stepId,
@@ -155,65 +196,6 @@ export function SimplifiedClosingFlow() {
         const newCompletedSteps = new Set(completedSteps);
         newCompletedSteps.add(stepId);
         setCompletedSteps(newCompletedSteps);
-
-        // Check if all steps are completed
-        if (newCompletedSteps.size === STEPS.length) {
-          // Mark other steps as completed with empty data
-          const finalStepData = { ...newStepData };
-
-          // Auto-complete step 1 (Daily Summary)
-          if (!finalStepData.step1) {
-            await closingProcedureService.updateStep(
-              closingId,
-              1,
-              {
-                totalTransactions: 0,
-                totalRevenue: 0,
-                totalProfit: 0,
-                notes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-              },
-              true
-            );
-          }
-
-          // Auto-complete step 3 (Equipment Check)
-          if (!finalStepData.step3) {
-            await closingProcedureService.updateStep(
-              closingId,
-              3,
-              {
-                equipmentOff: true,
-                equipmentClean: true,
-                gasOff: true,
-                notes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-              },
-              true
-            );
-          }
-
-          // Auto-complete step 4 (Cleanliness)
-          if (!finalStepData.step4) {
-            await closingProcedureService.updateStep(
-              closingId,
-              4,
-              {
-                areaClean: true,
-                trashDisposed: true,
-                foodStored: true,
-                notes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-              },
-              true
-            );
-          }
-
-          setIsCompleted(true);
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 2000);
-        }
 
         // Clear selected step
         setSelectedStep(null);
@@ -228,10 +210,108 @@ export function SimplifiedClosingFlow() {
     }
   };
 
-  const handleStepClick = (stepId: number) => {
-    if (!completedSteps.has(stepId)) {
-      setSelectedStep(stepId);
+  const handleStepUpdate = async (stepId: number, data: any) => {
+    if (!closingId) return;
+
+    try {
+      setSaving(true);
+
+      // Update step data locally first
+      const newStepData = { ...stepData, [stepId]: data };
+      setStepData(newStepData);
+
+      // Save to API without marking as completed
+      const updateResult = await closingProcedureService.saveProgress(
+        closingId,
+        stepId,
+        data
+      );
+
+      if (!updateResult.success) {
+        setError("Failed to save progress. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error saving step:", err);
+      setError("Failed to save progress. Please try again.");
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handleFinalizeClosing = async () => {
+    if (!closingId) return;
+
+    try {
+      setFinalizing(true);
+      setError("");
+
+      // Auto-complete missing steps
+      const finalStepData = { ...stepData };
+
+      // Auto-complete step 1 (Daily Summary)
+      if (!finalStepData[1]) {
+        await closingProcedureService.updateStep(
+          closingId,
+          1,
+          {
+            totalTransactions: 0,
+            totalRevenue: 0,
+            totalProfit: 0,
+            notes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+          },
+          true
+        );
+      }
+
+      // Auto-complete step 3 (Equipment Check)
+      if (!finalStepData[3]) {
+        await closingProcedureService.updateStep(
+          closingId,
+          3,
+          {
+            equipmentOff: true,
+            equipmentClean: true,
+            gasOff: true,
+            notes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+          },
+          true
+        );
+      }
+
+      // Auto-complete step 4 (Cleanliness)
+      if (!finalStepData[4]) {
+        await closingProcedureService.updateStep(
+          closingId,
+          4,
+          {
+            areaClean: true,
+            trashDisposed: true,
+            foodStored: true,
+            notes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+          },
+          true
+        );
+      }
+
+      // The API will automatically mark the closing as completed when all steps are done
+      setIsFinalized(true);
+      setIsCompleted(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+    } catch (err) {
+      console.error("Error finalizing closing:", err);
+      setError("Failed to finalize closing. Please try again.");
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
+  const handleStepClick = (stepId: number) => {
+    setSelectedStep(stepId);
   };
 
   const getStepStatus = (stepId: number) => {
@@ -376,7 +456,8 @@ export function SimplifiedClosingFlow() {
               if (confirm("Yakin ingin membatalkan prosedur penutupan?")) {
                 try {
                   setSaving(true);
-                  const result = await closingProcedureService.cancelTodayClosing();
+                  const result =
+                    await closingProcedureService.cancelTodayClosing();
                   if (result.success) {
                     router.push("/dashboard");
                   } else {
@@ -446,6 +527,15 @@ export function SimplifiedClosingFlow() {
                     <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                   </div>
                 )}
+                {(() => {
+                  console.log(
+                    "Step data for",
+                    selectedStep,
+                    ":",
+                    stepData[selectedStep] || {}
+                  );
+                  return null;
+                })()}
                 <CurrentStepComponent
                   data={stepData[selectedStep] || {}}
                   onNext={(data: any) => handleStepComplete(selectedStep, data)}
@@ -506,6 +596,36 @@ export function SimplifiedClosingFlow() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Finalize Closing Button */}
+      {!selectedStep && !isFinalized && (
+        <div className="text-center mt-8">
+          <Button
+            size="lg"
+            onClick={handleFinalizeClosing}
+            disabled={finalizing || completedSteps.size < STEPS.length}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            {finalizing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Menyelesaikan...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-5 w-5" />
+                Selesaikan Penutupan
+              </>
+            )}
+          </Button>
+          {completedSteps.size < STEPS.length && (
+            <p className="text-sm text-gray-500 mt-2">
+              Selesaikan semua langkah terlebih dahulu ({completedSteps.size}{" "}
+              dari {STEPS.length})
+            </p>
+          )}
         </div>
       )}
     </div>
