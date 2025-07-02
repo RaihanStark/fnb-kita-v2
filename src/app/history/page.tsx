@@ -293,7 +293,7 @@ export default function HistoryPage() {
                         <TableHead className="text-right">Penjualan</TableHead>
                         <TableHead className="text-right">Tunai/QRIS</TableHead>
                         <TableHead className="text-center">Transaksi</TableHead>
-                        <TableHead className="text-center">Item Terjual</TableHead>
+                        <TableHead className="text-center">Risol Terjual</TableHead>
                         <TableHead>Selisih Kas</TableHead>
                         <TableHead>Produk Terlaris</TableHead>
                         <TableHead className="text-center">Aksi</TableHead>

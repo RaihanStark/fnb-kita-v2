@@ -207,7 +207,7 @@ export default function HistoryDetailPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Item Terjual
+                Risol Terjual
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -1,8 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDb, openingProcedures, closingProcedures, transactions, stocks, users } from '@/lib/db';
-import { authenticateUser } from '@/lib/auth/middleware';
-import { and, eq, gte, lt, sql, asc } from 'drizzle-orm';
-import { startOfDayUTC7, endOfDayUTC7 } from '@/lib/utils/timezone';
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getDb,
+  openingProcedures,
+  closingProcedures,
+  transactions,
+  stocks,
+  users,
+} from "@/lib/db";
+import { authenticateUser } from "@/lib/auth/middleware";
+import { and, eq, gte, lt, sql, asc } from "drizzle-orm";
+import { startOfDayUTC7, endOfDayUTC7 } from "@/lib/utils/timezone";
 
 export async function GET(
   req: NextRequest,
@@ -12,32 +19,35 @@ export async function GET(
     // Verify authentication
     const tokenPayload = await authenticateUser(req);
     if (!tokenPayload) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { date } = await params; // Format: YYYY-MM-DD
-    console.log('Fetching history for date:', date);
-    
+    console.log("Fetching history for date:", date);
+
     const db = getDb();
-    
+
     // Parse date and get day boundaries
     const targetDate = new Date(date);
     if (isNaN(targetDate.getTime())) {
       return NextResponse.json(
-        { success: false, error: 'Invalid date format' },
+        { success: false, error: "Invalid date format" },
         { status: 400 }
       );
     }
-    
+
     const dayStart = startOfDayUTC7(targetDate);
     const dayEnd = endOfDayUTC7(targetDate);
-    console.log('Day boundaries:', { dayStart, dayEnd });
+    console.log("Day boundaries:", { dayStart, dayEnd });
 
     // Get opening procedure with user info
     const openingResult = await db
       .select({
         procedure: openingProcedures,
-        user: users
+        user: users,
       })
       .from(openingProcedures)
       .leftJoin(users, eq(openingProcedures.userId, users.id))
@@ -53,7 +63,7 @@ export async function GET(
     const closingResult = await db
       .select({
         procedure: closingProcedures,
-        user: users
+        user: users,
       })
       .from(closingProcedures)
       .leftJoin(users, eq(closingProcedures.createdByUserId, users.id))
@@ -82,13 +92,20 @@ export async function GET(
     if (openingResult[0]) {
       const { procedure, user } = openingResult[0];
       const stepData = procedure.stepData as any;
-      
+
       openingData = {
-        time: procedure.createdAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        user: user?.username || 'Unknown',
+        time: procedure.createdAt.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        user: user?.username || "Unknown",
         openingCash: stepData?.step4?.totalCash || 0,
-        stockCount: stepData?.step2?.stockItems?.reduce((sum: number, item: any) => sum + item.totalCount, 0) || 0,
-        discrepancies: stepData?.productDiscrepancies || []
+        stockCount:
+          stepData?.step2?.stockItems?.reduce(
+            (sum: number, item: any) => sum + item.totalCount,
+            0
+          ) || 0,
+        discrepancies: stepData?.productDiscrepancies || [],
       };
     }
 
@@ -97,43 +114,52 @@ export async function GET(
     if (closingResult[0]) {
       const { procedure, user } = closingResult[0];
       const stepData = procedure.stepData as any;
-      
+
       closingData = {
-        time: procedure.createdAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        user: user?.username || 'Unknown',
+        time: procedure.createdAt.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        user: user?.username || "Unknown",
         closingCash: stepData?.totalClosingCash || 0,
         expectedCash: stepData?.expectedCash || 0,
         cashDiscrepancy: stepData?.discrepancy || 0,
-        note: stepData?.discrepancyNote || null
+        note: stepData?.discrepancyNote || null,
       };
     }
 
     // Process transactions
-    const processedTransactions = transactionsResult.map(trans => ({
+    const processedTransactions = transactionsResult.map((trans) => ({
       id: trans.id,
-      time: trans.createdAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      time: trans.createdAt.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       type: trans.type,
       items: trans.items,
       totalAmount: trans.totalAmount ? Number(trans.totalAmount) : undefined,
       paymentMethod: trans.paymentMethod,
-      notes: trans.notes
+      notes: trans.notes,
     }));
 
     // Calculate stock movements
-    const stockMovementMap = new Map<string, {
-      opening: number;
-      purchased: number;
-      sold: number;
-      damaged: number;
-      bonus: number;
-      disposal: number;
-    }>();
+    const stockMovementMap = new Map<
+      string,
+      {
+        opening: number;
+        purchased: number;
+        sold: number;
+        damaged: number;
+        bonus: number;
+        disposal: number;
+      }
+    >();
 
     // Initialize with opening stock if available
     if (openingData && openingResult[0]) {
       const stepData = openingResult[0].procedure.stepData as any;
       const stockItems = stepData?.step2?.stockItems || [];
-      
+
       for (const item of stockItems) {
         stockMovementMap.set(item.name, {
           opening: item.totalCount || 0,
@@ -141,7 +167,7 @@ export async function GET(
           sold: 0,
           damaged: 0,
           bonus: 0,
-          disposal: 0
+          disposal: 0,
         });
       }
     }
@@ -157,20 +183,20 @@ export async function GET(
           sold: 0,
           damaged: 0,
           bonus: 0,
-          disposal: 0
+          disposal: 0,
         };
 
         switch (trans.type) {
-          case 'sales':
+          case "sales":
             movement.sold += item.quantity;
             break;
-          case 'damaged':
+          case "damaged":
             movement.damaged += item.quantity;
             break;
-          case 'bonus':
+          case "bonus":
             movement.bonus += item.quantity;
             break;
-          case 'disposal':
+          case "disposal":
             movement.disposal += item.quantity;
             break;
         }
@@ -180,36 +206,56 @@ export async function GET(
     }
 
     // Convert to array and calculate closing
-    const stockMovements = Array.from(stockMovementMap.entries()).map(([product, movement]) => ({
-      product,
-      ...movement,
-      closing: movement.opening + movement.purchased - movement.sold - movement.damaged - movement.bonus - movement.disposal
-    }));
+    const stockMovements = Array.from(stockMovementMap.entries()).map(
+      ([product, movement]) => ({
+        product,
+        ...movement,
+        closing:
+          movement.opening +
+          movement.purchased -
+          movement.sold -
+          movement.damaged -
+          movement.bonus -
+          movement.disposal,
+      })
+    );
 
     // Calculate summary
-    const salesTransactions = transactionsResult.filter(t => t.type === 'sales');
-    const totalSales = salesTransactions.reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
+    const salesTransactions = transactionsResult.filter(
+      (t) => t.type === "sales"
+    );
+    const totalSales = salesTransactions.reduce(
+      (sum, t) => sum + Number(t.totalAmount || 0),
+      0
+    );
     const totalCashSales = salesTransactions
-      .filter(t => t.paymentMethod === 'cash')
+      .filter((t) => t.paymentMethod === "cash")
       .reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
     const totalQrisSales = salesTransactions
-      .filter(t => t.paymentMethod === 'qris')
+      .filter((t) => t.paymentMethod === "qris")
       .reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
 
-    // Calculate total items sold and top products
+    // Calculate total items sold and top products (only risol, not packaging)
     let totalItemsSold = 0;
-    const productSales = new Map<string, { quantity: number; revenue: number }>();
-    
+    const productSales = new Map<
+      string,
+      { quantity: number; revenue: number }
+    >();
+
     for (const trans of salesTransactions) {
       const items = trans.items as any[];
       for (const item of items) {
-        totalItemsSold += item.quantity;
-        
-        const key = `${item.name} - ${item.variant}`;
-        const existing = productSales.get(key) || { quantity: 0, revenue: 0 };
-        existing.quantity += item.quantity;
-        existing.revenue += (item.price || 0) * item.quantity;
-        productSales.set(key, existing);
+        // Only count risol items, not packaging
+        const itemNameLower = item.name.toLowerCase();
+        if (itemNameLower.includes("risol")) {
+          totalItemsSold += item.quantity;
+
+          const key = `${item.name} - ${item.variant}`;
+          const existing = productSales.get(key) || { quantity: 0, revenue: 0 };
+          existing.quantity += item.quantity;
+          existing.revenue += (item.price || 0) * item.quantity;
+          productSales.set(key, existing);
+        }
       }
     }
 
@@ -223,30 +269,32 @@ export async function GET(
       totalQrisSales,
       totalTransactions: salesTransactions.length,
       totalItemsSold,
-      averageTransactionValue: salesTransactions.length > 0 ? Math.round(totalSales / salesTransactions.length) : 0,
-      topProducts
+      averageTransactionValue:
+        salesTransactions.length > 0
+          ? Math.round(totalSales / salesTransactions.length)
+          : 0,
+      topProducts,
     };
 
     return NextResponse.json({
       success: true,
       data: {
         date,
-        dayName: targetDate.toLocaleDateString('id-ID', { weekday: 'long' }),
+        dayName: targetDate.toLocaleDateString("id-ID", { weekday: "long" }),
         openingData,
         closingData,
         transactions: processedTransactions,
         stockMovements,
-        summary
-      }
+        summary,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching day detail:', error);
+    console.error("Error fetching day detail:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch day detail',
-        details: error instanceof Error ? error.message : 'Unknown error'
+      {
+        success: false,
+        error: "Failed to fetch day detail",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
