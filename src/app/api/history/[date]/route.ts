@@ -100,9 +100,9 @@ export async function GET(
         }),
         user: user?.username || "Unknown",
         openingCash: stepData?.step4?.totalCash || 0,
-        stockCount:
+        stockCount: stepData?.step2?.totalCount || 
           stepData?.step2?.stockItems?.reduce(
-            (sum: number, item: any) => sum + item.totalCount,
+            (sum: number, item: any) => sum + (item.frozenCount || 0) + (item.readyCount || 0),
             0
           ) || 0,
         discrepancies: stepData?.productDiscrepancies || [],
@@ -121,10 +121,10 @@ export async function GET(
           minute: "2-digit",
         }),
         user: user?.username || "Unknown",
-        closingCash: stepData?.totalClosingCash || 0,
-        expectedCash: stepData?.expectedCash || 0,
-        cashDiscrepancy: stepData?.discrepancy || 0,
-        note: stepData?.discrepancyNote || null,
+        closingCash: stepData?.totalClosingCash || stepData?.step5?.totalClosingCash || stepData?.[5]?.totalClosingCash || stepData?.step1?.totalCash || 0,
+        expectedCash: stepData?.expectedCash || stepData?.step5?.expectedCash || stepData?.[5]?.expectedCash || stepData?.step1?.systemCash || 0,
+        cashDiscrepancy: stepData?.discrepancy || stepData?.step5?.discrepancy || stepData?.[5]?.discrepancy || stepData?.step1?.difference || 0,
+        note: stepData?.discrepancyNote || stepData?.step5?.discrepancyNote || stepData?.[5]?.discrepancyNote || stepData?.step1?.notes || null,
       };
     }
 

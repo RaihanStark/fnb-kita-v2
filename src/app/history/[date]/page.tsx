@@ -151,6 +151,8 @@ export default function HistoryDetailPage() {
     );
   }
 
+  console.log(dayDetail);
+
   return (
     <AppLayout>
       <div className="container max-w-7xl mx-auto p-6">
@@ -304,10 +306,6 @@ export default function HistoryDetailPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>{dayDetail.closingData.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{dayDetail.closingData.user}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />

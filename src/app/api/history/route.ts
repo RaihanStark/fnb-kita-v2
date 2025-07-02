@@ -162,8 +162,8 @@ export async function GET(req: NextRequest) {
 
       if (closing?.stepData) {
         const stepData = closing.stepData as any;
-        closingCash = stepData?.totalClosingCash || 0;
-        cashDiscrepancy = stepData?.discrepancy || 0;
+        closingCash = stepData?.totalClosingCash || stepData?.step5?.totalClosingCash || stepData?.[5]?.totalClosingCash || stepData?.step1?.totalCash || 0;
+        cashDiscrepancy = stepData?.discrepancy || stepData?.step5?.discrepancy || stepData?.[5]?.discrepancy || stepData?.step1?.difference || 0;
       }
 
       const totalSales = Number(salesData[0]?.totalSales || 0);
