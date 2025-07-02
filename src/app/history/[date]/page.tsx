@@ -369,10 +369,22 @@ export default function HistoryDetailPage() {
                               variant={
                                 trans.type === "sales"
                                   ? "default"
-                                  : "destructive"
+                                  : trans.type === "damaged"
+                                  ? "destructive"
+                                  : trans.type === "bonus"
+                                  ? "secondary"
+                                  : "outline"
                               }
                             >
-                              {trans.type === "sales" ? "Penjualan" : "Rusak"}
+                              {trans.type === "sales"
+                                ? "Penjualan"
+                                : trans.type === "damaged"
+                                ? "Rusak"
+                                : trans.type === "bonus"
+                                ? "Bonus"
+                                : trans.type === "disposal"
+                                ? "Buang"
+                                : trans.type}
                             </Badge>
                           </TableCell>
                           <TableCell>

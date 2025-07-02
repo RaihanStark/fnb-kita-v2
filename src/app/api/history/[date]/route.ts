@@ -162,7 +162,12 @@ export async function GET(
 
       for (const item of stockItems) {
         const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
-        const openingCount = (item.frozenCount || 0) + (item.readyCount || 0);
+        // For risol products: use frozenCount + readyCount
+        // For other items (packaging, etc): use currentCount
+        const openingCount = item.currentCount !== undefined 
+          ? item.currentCount 
+          : (item.frozenCount || 0) + (item.readyCount || 0);
+          
         stockMovementMap.set(key, {
           opening: openingCount,
           purchased: 0,
@@ -178,7 +183,8 @@ export async function GET(
     for (const trans of transactionsResult) {
       const items = trans.items as any[];
       for (const item of items) {
-        const key = `${item.name} - ${item.variant}`;
+        // Use same key format as opening stock
+        const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
         const movement = stockMovementMap.get(key) || {
           opening: 0,
           purchased: 0,
