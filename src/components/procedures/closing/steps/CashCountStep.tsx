@@ -39,6 +39,9 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
       { value: 5000, count: 0, label: "Rp 5.000" },
       { value: 2000, count: 0, label: "Rp 2.000" },
       { value: 1000, count: 0, label: "Rp 1.000" },
+      { value: 500, count: 0, label: "Rp 500" },
+      { value: 200, count: 0, label: "Rp 200" },
+      { value: 100, count: 0, label: "Rp 100" },
     ]
   );
   const [expectedCash, setExpectedCash] = useState<number | null>(null);
@@ -57,7 +60,7 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
     try {
       // Get today's opening cash and sales
       const response = await fetch(`/api/procedures/closing/expected-cash`, {
-        credentials: 'include'
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -71,7 +74,7 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
         }
       }
     } catch (error) {
-      console.error('Error fetching expected cash:', error);
+      console.error("Error fetching expected cash:", error);
     } finally {
       setLoading(false);
     }
@@ -92,14 +95,16 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
 
   const handleSubmit = () => {
     const currentTotal = calculateTotal();
-    const hasDiscrepancy = expectedCash !== null && currentTotal !== expectedCash;
-    
+    const hasDiscrepancy =
+      expectedCash !== null && currentTotal !== expectedCash;
+
     // Check if discrepancy needs explanation
     if (hasDiscrepancy && !discrepancyNote.trim()) {
       toast({
         title: "Catatan Diperlukan",
-        description: "Harap jelaskan perbedaan jumlah kas dengan yang diharapkan",
-        variant: "destructive"
+        description:
+          "Harap jelaskan perbedaan jumlah kas dengan yang diharapkan",
+        variant: "destructive",
       });
       return;
     }
@@ -120,18 +125,23 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
 
   const getDiscrepancyInfo = () => {
     if (expectedCash === null || loading) return null;
-    
+
     const currentTotal = calculateTotal();
     const difference = currentTotal - expectedCash;
-    
+
     if (difference === 0) return null;
-    
+
     return {
       difference,
       isExcess: difference > 0,
-      message: difference > 0 
-        ? `Kelebihan ${formatCurrency(Math.abs(difference))} dari yang diharapkan`
-        : `Kurang ${formatCurrency(Math.abs(difference))} dari yang diharapkan`
+      message:
+        difference > 0
+          ? `Kelebihan ${formatCurrency(
+              Math.abs(difference)
+            )} dari yang diharapkan`
+          : `Kurang ${formatCurrency(
+              Math.abs(difference)
+            )} dari yang diharapkan`,
     };
   };
 
@@ -140,9 +150,7 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Pecahan Uang</CardTitle>
-          <CardDescription>
-            Hitung jumlah uang kas akhir hari
-          </CardDescription>
+          <CardDescription>Hitung jumlah uang kas akhir hari</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -183,36 +191,59 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
               {openingCash !== null && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Kas Pembukaan:</span>
-                  <span className="font-medium">{formatCurrency(openingCash)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(openingCash)}
+                  </span>
                 </div>
               )}
               {totalCashSales !== null && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Penjualan Tunai:</span>
-                  <span className="font-medium">{formatCurrency(totalCashSales)}</span>
+                  <span className="text-muted-foreground">
+                    Penjualan Tunai:
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(totalCashSales)}
+                  </span>
                 </div>
               )}
               {totalQrisSales !== null && totalQrisSales > 0 && (
                 <div className="flex justify-between text-sm text-gray-500">
                   <span className="text-muted-foreground">Penjualan QRIS:</span>
-                  <span className="font-medium">{formatCurrency(totalQrisSales)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(totalQrisSales)}
+                  </span>
                 </div>
               )}
               {totalSales !== null && (
                 <div className="flex justify-between text-sm pt-1">
-                  <span className="text-muted-foreground">Total Penjualan:</span>
-                  <span className="font-medium">{formatCurrency(totalSales)}</span>
+                  <span className="text-muted-foreground">
+                    Total Penjualan:
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(totalSales)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-semibold border-t pt-2">
-                <span className="text-muted-foreground">Kas yang Diharapkan:</span>
-                <span className="font-medium">{formatCurrency(expectedCash)}</span>
+                <span className="text-muted-foreground">
+                  Kas yang Diharapkan:
+                </span>
+                <span className="font-medium">
+                  {formatCurrency(expectedCash)}
+                </span>
               </div>
               {getDiscrepancyInfo() && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Selisih:</span>
-                  <span className={`font-medium ${getDiscrepancyInfo()!.isExcess ? 'text-blue-600' : 'text-red-600'}`}>
-                    {getDiscrepancyInfo()!.isExcess ? '+' : '-'}{formatCurrency(Math.abs(getDiscrepancyInfo()!.difference))}
+                  <span
+                    className={`font-medium ${
+                      getDiscrepancyInfo()!.isExcess
+                        ? "text-blue-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {getDiscrepancyInfo()!.isExcess ? "+" : "-"}
+                    {formatCurrency(Math.abs(getDiscrepancyInfo()!.difference))}
                   </span>
                 </div>
               )}
@@ -228,22 +259,43 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
 
       {/* Discrepancy Clarification */}
       {getDiscrepancyInfo() && (
-        <Alert className={getDiscrepancyInfo()!.isExcess ? "border-blue-200 bg-blue-50" : "border-red-200 bg-red-50"}>
+        <Alert
+          className={
+            getDiscrepancyInfo()!.isExcess
+              ? "border-blue-200 bg-blue-50"
+              : "border-red-200 bg-red-50"
+          }
+        >
           <div className="flex gap-3">
-            <AlertCircle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${getDiscrepancyInfo()!.isExcess ? 'text-blue-600' : 'text-red-600'}`} />
+            <AlertCircle
+              className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                getDiscrepancyInfo()!.isExcess
+                  ? "text-blue-600"
+                  : "text-red-600"
+              }`}
+            />
             <div className="flex-1">
-              <AlertDescription className={`text-sm font-medium ${getDiscrepancyInfo()!.isExcess ? 'text-blue-800' : 'text-red-800'}`}>
+              <AlertDescription
+                className={`text-sm font-medium ${
+                  getDiscrepancyInfo()!.isExcess
+                    ? "text-blue-800"
+                    : "text-red-800"
+                }`}
+              >
                 {getDiscrepancyInfo()!.message}
               </AlertDescription>
               <div className="mt-3">
                 <Label htmlFor="discrepancy-note" className="text-xs">
-                  Jelaskan alasan perbedaan <span className="text-red-500">*</span>
+                  Jelaskan alasan perbedaan{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
                   id="discrepancy-note"
-                  placeholder={getDiscrepancyInfo()!.isExcess 
-                    ? "Contoh: Ada penjualan tidak tercatat, tip dari pelanggan, dll..."
-                    : "Contoh: Ada pengeluaran untuk belanja, kembalian salah, dll..."}
+                  placeholder={
+                    getDiscrepancyInfo()!.isExcess
+                      ? "Contoh: Ada penjualan tidak tercatat, tip dari pelanggan, dll..."
+                      : "Contoh: Ada pengeluaran untuk belanja, kembalian salah, dll..."
+                  }
                   value={discrepancyNote}
                   onChange={(e) => setDiscrepancyNote(e.target.value)}
                   rows={2}
