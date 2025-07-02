@@ -93,20 +93,79 @@ export async function GET(
       const { procedure, user } = openingResult[0];
       const stepData = procedure.stepData as any;
 
+      // Extract stock discrepancy information
+      console.log("Full step data:", JSON.stringify(stepData, null, 2));
+      const stockItems = stepData?.step2?.stockItems || [];
+
+      // Debug logging
+      console.log("Raw stock items:", JSON.stringify(stockItems, null, 2));
+
+      const discrepancyItems = stockItems.filter((item: any) => {
+        // Convert to numbers to handle string values
+        const missingCount = Number(item.missingCount) || 0;
+        const excessCount = Number(item.excessCount) || 0;
+        const hasMissing = missingCount > 0;
+        const hasExcess = excessCount > 0;
+
+        console.log(
+          `Item ${item.name} - ${item.variant}: missingCount=${
+            item.missingCount
+          } (${typeof item.missingCount}), excessCount=${
+            item.excessCount
+          } (${typeof item.excessCount}), hasMissing=${hasMissing}, hasExcess=${hasExcess}`
+        );
+        return hasMissing || hasExcess;
+      });
+
+      console.log("Discrepancy items found:", discrepancyItems.length);
+
+      // Format discrepancy items for display
+      const formattedDiscrepancies = discrepancyItems.map((item: any) => {
+        const missingCount = Number(item.missingCount) || 0;
+        const excessCount = Number(item.excessCount) || 0;
+
+        return {
+          name: item.variant ? `${item.name} - ${item.variant}` : item.name,
+          type: item.type || "product",
+          unit: item.unit || "pcs",
+          missingCount: missingCount,
+          excessCount: excessCount,
+          notes: item.notes || "",
+          discrepancyType: missingCount > 0 ? "missing" : "excess",
+          discrepancyAmount: missingCount > 0 ? missingCount : excessCount,
+        };
+      });
+
+      console.log("Formatted discrepancies:", formattedDiscrepancies);
+
       openingData = {
         time: procedure.createdAt.toLocaleTimeString("id-ID", {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        user: user?.username || "Unknown",
+        user: user?.name || "Unknown",
         openingCash: stepData?.step4?.totalCash || 0,
-        stockCount: stepData?.step2?.totalCount || 
-          stepData?.step2?.stockItems?.reduce(
-            (sum: number, item: any) => sum + (item.frozenCount || 0) + (item.readyCount || 0),
-            0
-          ) || 0,
-        discrepancies: stepData?.productDiscrepancies || [],
+        stockCount:
+          stepData?.step2?.totalCount ||
+          stepData?.step2?.stockItems?.reduce((sum: number, item: any) => {
+            if (item.type === "product") {
+              return sum + (item.frozenCount || 0) + (item.readyCount || 0);
+            } else {
+              return sum + (item.currentCount || 0);
+            }
+          }, 0) ||
+          0,
+        discrepancies: formattedDiscrepancies,
+        generalNotes: stepData?.step2?.generalNotes || "",
+        hasDiscrepancies: formattedDiscrepancies.length > 0,
+        totalDiscrepancies: formattedDiscrepancies.length,
       };
+
+      console.log("Final opening data:", {
+        hasDiscrepancies: formattedDiscrepancies.length > 0,
+        totalDiscrepancies: formattedDiscrepancies.length,
+        discrepancies: formattedDiscrepancies,
+      });
     }
 
     // Process closing data
@@ -120,11 +179,31 @@ export async function GET(
           hour: "2-digit",
           minute: "2-digit",
         }),
-        user: user?.username || "Unknown",
-        closingCash: stepData?.totalClosingCash || stepData?.step5?.totalClosingCash || stepData?.[5]?.totalClosingCash || stepData?.step1?.totalCash || 0,
-        expectedCash: stepData?.expectedCash || stepData?.step5?.expectedCash || stepData?.[5]?.expectedCash || stepData?.step1?.systemCash || 0,
-        cashDiscrepancy: stepData?.discrepancy || stepData?.step5?.discrepancy || stepData?.[5]?.discrepancy || stepData?.step1?.difference || 0,
-        note: stepData?.discrepancyNote || stepData?.step5?.discrepancyNote || stepData?.[5]?.discrepancyNote || stepData?.step1?.notes || null,
+        user: user?.name || "Unknown",
+        closingCash:
+          stepData?.totalClosingCash ||
+          stepData?.step5?.totalClosingCash ||
+          stepData?.[5]?.totalClosingCash ||
+          stepData?.step1?.totalCash ||
+          0,
+        expectedCash:
+          stepData?.expectedCash ||
+          stepData?.step5?.expectedCash ||
+          stepData?.[5]?.expectedCash ||
+          stepData?.step1?.systemCash ||
+          0,
+        cashDiscrepancy:
+          stepData?.discrepancy ||
+          stepData?.step5?.discrepancy ||
+          stepData?.[5]?.discrepancy ||
+          stepData?.step1?.difference ||
+          0,
+        note:
+          stepData?.discrepancyNote ||
+          stepData?.step5?.discrepancyNote ||
+          stepData?.[5]?.discrepancyNote ||
+          stepData?.step1?.notes ||
+          null,
       };
     }
 
@@ -164,10 +243,11 @@ export async function GET(
         const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
         // For risol products: use frozenCount + readyCount
         // For other items (packaging, etc): use currentCount
-        const openingCount = item.currentCount !== undefined 
-          ? item.currentCount 
-          : (item.frozenCount || 0) + (item.readyCount || 0);
-          
+        const openingCount =
+          item.currentCount !== undefined
+            ? item.currentCount
+            : (item.frozenCount || 0) + (item.readyCount || 0);
+
         stockMovementMap.set(key, {
           opening: openingCount,
           purchased: 0,
@@ -216,14 +296,19 @@ export async function GET(
     // Add closing stock data if available
     if (closingResult[0]) {
       const closingStepData = closingResult[0].procedure.stepData as any;
-      const closingStockItems = closingStepData?.step2?.stockItems || closingStepData?.[2]?.stockItems || [];
-      
+      const closingStockItems =
+        closingStepData?.step2?.stockItems ||
+        closingStepData?.[2]?.stockItems ||
+        [];
+
       for (const item of closingStockItems) {
         const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
         const movement = stockMovementMap.get(key);
         if (movement) {
           // Use actual closing count if available
-          const actualClosing = item.totalCount || (item.currentStock ? parseFloat(item.currentStock) : null);
+          const actualClosing =
+            item.totalCount ||
+            (item.currentStock ? parseFloat(item.currentStock) : null);
           if (actualClosing !== null && actualClosing !== undefined) {
             // We'll add this to the movement object for display
             (movement as any).actualClosing = actualClosing;
@@ -235,17 +320,21 @@ export async function GET(
     // Convert to array and calculate closing
     const stockMovements = Array.from(stockMovementMap.entries()).map(
       ([product, movement]) => {
-        const calculatedClosing = movement.opening +
+        const calculatedClosing =
+          movement.opening +
           movement.purchased -
           movement.sold -
           movement.damaged -
           movement.bonus -
           movement.disposal;
-        
+
         return {
           product,
           ...movement,
-          closing: (movement as any).actualClosing !== undefined ? (movement as any).actualClosing : calculatedClosing,
+          closing:
+            (movement as any).actualClosing !== undefined
+              ? (movement as any).actualClosing
+              : calculatedClosing,
         };
       }
     );

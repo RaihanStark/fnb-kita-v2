@@ -42,7 +42,19 @@ interface DayDetail {
     user: string;
     openingCash: number;
     stockCount: number;
-    discrepancies: Array<{ product: string; expected: number; actual: number }>;
+    discrepancies: Array<{
+      name: string;
+      type: string;
+      unit: string;
+      missingCount: number;
+      excessCount: number;
+      notes: string;
+      discrepancyType: "missing" | "excess";
+      discrepancyAmount: number;
+    }>;
+    generalNotes: string;
+    hasDiscrepancies: boolean;
+    totalDiscrepancies: number;
   } | null;
   closingData: {
     time: string;
@@ -151,7 +163,12 @@ export default function HistoryDetailPage() {
     );
   }
 
-  console.log(dayDetail);
+  console.log("Day Detail:", dayDetail);
+  console.log("Opening Data:", dayDetail.openingData);
+  if (dayDetail.openingData) {
+    console.log("Has Discrepancies:", dayDetail.openingData.hasDiscrepancies);
+    console.log("Discrepancies:", dayDetail.openingData.discrepancies);
+  }
 
   return (
     <AppLayout>
@@ -267,23 +284,135 @@ export default function HistoryDetailPage() {
                 Pembukaan
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               {dayDetail.openingData ? (
                 <>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{dayDetail.openingData.time}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{dayDetail.openingData.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>{dayDetail.openingData.user}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Kas: {formatCurrency(dayDetail.openingData.openingCash)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span>Stok: {dayDetail.openingData.stockCount} pcs</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      Kas: {formatCurrency(dayDetail.openingData.openingCash)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span>Stok: {dayDetail.openingData.stockCount} pcs</span>
-                  </div>
+
+                  {/* Discrepancy Information */}
+                  {dayDetail.openingData.hasDiscrepancies && (
+                    <div className="border-t pt-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-medium text-amber-800">
+                          Selisih Stok (
+                          {dayDetail.openingData.totalDiscrepancies} item)
+                        </span>
+                      </div>
+
+                      {/* Summary of discrepancies */}
+                      <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-xs">
+                        <div className="font-medium text-amber-800 mb-1">
+                          Ringkasan Selisih:
+                        </div>
+                        <div className="space-y-1">
+                          {(() => {
+                            const missingItems =
+                              dayDetail.openingData.discrepancies.filter(
+                                (d) => d.discrepancyType === "missing"
+                              );
+                            const excessItems =
+                              dayDetail.openingData.discrepancies.filter(
+                                (d) => d.discrepancyType === "excess"
+                              );
+
+                            return (
+                              <>
+                                {missingItems.length > 0 && (
+                                  <div className="text-red-700">
+                                    • {missingItems.length} item hilang
+                                  </div>
+                                )}
+                                {excessItems.length > 0 && (
+                                  <div className="text-blue-700">
+                                    • {excessItems.length} item kelebihan
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Detailed discrepancy items */}
+                      <div className="space-y-2">
+                        {dayDetail.openingData.discrepancies.map(
+                          (item, index) => (
+                            <div
+                              key={index}
+                              className="text-xs bg-amber-50 border border-amber-200 rounded p-2"
+                            >
+                              <div className="flex items-center gap-1 mb-1">
+                                <span className="font-medium">{item.name}</span>
+                                <Badge
+                                  variant={
+                                    item.discrepancyType === "missing"
+                                      ? "destructive"
+                                      : "secondary"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {item.discrepancyType === "missing"
+                                    ? "Hilang"
+                                    : "Kelebihan"}
+                                </Badge>
+                              </div>
+                              <div className="text-amber-700">
+                                {item.discrepancyType === "missing"
+                                  ? `Hilang: ${item.discrepancyAmount} ${item.unit}`
+                                  : `Kelebihan: ${item.discrepancyAmount} ${item.unit}`}
+                              </div>
+                              {item.notes && (
+                                <div className="text-amber-600 mt-1 italic">
+                                  <span className="font-medium">Catatan:</span>{" "}
+                                  "{item.notes}"
+                                </div>
+                              )}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Discrepancies Message */}
+                  {!dayDetail.openingData.hasDiscrepancies && (
+                    <div className="border-t pt-3">
+                      <div className="flex items-center gap-2 text-sm text-green-700">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Tidak ada selisih stok</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* General Notes */}
+                  {dayDetail.openingData.generalNotes && (
+                    <div className="border-t pt-3">
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Catatan:</span>{" "}
+                        {dayDetail.openingData.generalNotes}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
