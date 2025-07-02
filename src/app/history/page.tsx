@@ -52,13 +52,12 @@ interface DailyHistory {
   totalTransactions: number;
   totalItemsSold: number;
   averageTransactionValue: number;
-  stockUsed: number;
   stockDamaged: number;
   stockBonus: number;
   hasOpening: boolean;
   hasClosing: boolean;
   cashDiscrepancy: number;
-  topProducts: Array<{ name: string; quantity: number }>;
+  topProducts: Array<{ name: string; quantity: number; revenue: number }>;
 }
 
 export default function HistoryPage() {
@@ -78,59 +77,21 @@ export default function HistoryPage() {
   const fetchHistoryData = async () => {
     setLoading(true);
     try {
-      // For now, generate mock data
-      const mockData: DailyHistory[] = [];
-      const currentDate = new Date();
-      const [year, month] = selectedMonth.split('-').map(Number);
-      
-      // Generate data for each day of the selected month
-      const daysInMonth = new Date(year, month, 0).getDate();
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month - 1, day);
-        
-        // Skip future dates
-        if (date > currentDate) continue;
-        
-        // Generate random but realistic data
-        const hasOpening = Math.random() > 0.1; // 90% chance of opening
-        const hasClosing = hasOpening && Math.random() > 0.15; // 85% chance of closing if opened
-        const totalSales = hasOpening ? Math.floor(Math.random() * 500000) + 200000 : 0;
-        const cashRatio = 0.3 + Math.random() * 0.4; // 30-70% cash
-        const totalCashSales = Math.floor(totalSales * cashRatio);
-        const totalQrisSales = totalSales - totalCashSales;
-        const totalTransactions = hasOpening ? Math.floor(Math.random() * 30) + 10 : 0;
-        const totalItemsSold = hasOpening ? Math.floor(Math.random() * 100) + 30 : 0;
-        
-        mockData.push({
-          date: date.toISOString().split('T')[0],
-          dayName: formatDateUTC7(date, 'EEEE'),
-          openingCash: hasOpening ? Math.floor(Math.random() * 200000) + 100000 : 0,
-          closingCash: hasClosing ? Math.floor(Math.random() * 400000) + 200000 : 0,
-          totalSales,
-          totalCashSales,
-          totalQrisSales,
-          totalTransactions,
-          totalItemsSold,
-          averageTransactionValue: totalTransactions > 0 ? Math.floor(totalSales / totalTransactions) : 0,
-          stockUsed: totalItemsSold,
-          stockDamaged: Math.floor(Math.random() * 5),
-          stockBonus: Math.floor(Math.random() * 10),
-          hasOpening,
-          hasClosing,
-          cashDiscrepancy: hasClosing ? Math.floor(Math.random() * 20000) - 10000 : 0,
-          topProducts: [
-            { name: "Risol Mayo", quantity: Math.floor(Math.random() * 20) + 5 },
-            { name: "Risol Beef", quantity: Math.floor(Math.random() * 15) + 3 },
-            { name: "Risol Cheese", quantity: Math.floor(Math.random() * 10) + 2 },
-          ]
-        });
+      const response = await fetch(`/api/history?month=${selectedMonth}`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch history data');
       }
+
+      const result = await response.json();
       
-      // Sort by date descending
-      mockData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      setHistoryData(mockData);
+      if (result.success) {
+        setHistoryData(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to fetch history data');
+      }
     } catch (error) {
       console.error("Error fetching history data:", error);
       toast({
@@ -138,6 +99,7 @@ export default function HistoryPage() {
         description: "Gagal memuat data riwayat",
         variant: "destructive"
       });
+      setHistoryData([]);
     } finally {
       setLoading(false);
     }

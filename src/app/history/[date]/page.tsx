@@ -43,7 +43,7 @@ interface DayDetail {
     openingCash: number;
     stockCount: number;
     discrepancies: Array<{ product: string; expected: number; actual: number }>;
-  };
+  } | null;
   closingData: {
     time: string;
     user: string;
@@ -51,12 +51,12 @@ interface DayDetail {
     expectedCash: number;
     cashDiscrepancy: number;
     note?: string;
-  };
+  } | null;
   transactions: Array<{
     id: string;
     time: string;
     type: string;
-    items: Array<{ name: string; quantity: number; price?: number }>;
+    items: Array<{ name: string; variant?: string; quantity: number; price?: number }>;
     totalAmount?: number;
     paymentMethod?: string;
     notes?: string;
@@ -68,6 +68,7 @@ interface DayDetail {
     sold: number;
     damaged: number;
     bonus: number;
+    disposal: number;
     closing: number;
   }>;
   summary: {
@@ -98,61 +99,21 @@ export default function HistoryDetailPage() {
   const fetchDayDetail = async () => {
     setLoading(true);
     try {
-      // Mock data for now
-      const mockDetail: DayDetail = {
-        date: date,
-        dayName: formatDateUTC7(new Date(date), 'EEEE'),
-        openingData: {
-          time: "07:45",
-          user: "manager1",
-          openingCash: 150000,
-          stockCount: 250,
-          discrepancies: [
-            { product: "Risol Mayo", expected: 50, actual: 48 },
-            { product: "Risol Beef", expected: 30, actual: 30 },
-          ]
-        },
-        closingData: {
-          time: "21:30",
-          user: "manager1",
-          closingCash: 485000,
-          expectedCash: 480000,
-          cashDiscrepancy: 5000,
-          note: "Kelebihan dari tips pelanggan"
-        },
-        transactions: Array.from({ length: 15 }, (_, i) => ({
-          id: `trans-${i}`,
-          time: `${8 + Math.floor(i * 0.8)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-          type: i % 10 === 0 ? 'damaged' : 'sales',
-          items: [
-            { name: "Risol Mayo", quantity: Math.floor(Math.random() * 5) + 1, price: 8000 },
-            { name: "Risol Beef", quantity: Math.floor(Math.random() * 3) + 1, price: 10000 },
-          ],
-          totalAmount: i % 10 === 0 ? undefined : (Math.floor(Math.random() * 50) + 20) * 1000,
-          paymentMethod: i % 10 === 0 ? undefined : (Math.random() > 0.5 ? 'cash' : 'qris'),
-          notes: i % 5 === 0 ? "Pelanggan reguler" : undefined
-        })),
-        stockMovements: [
-          { product: "Risol Mayo", opening: 50, purchased: 0, sold: 35, damaged: 2, bonus: 0, closing: 13 },
-          { product: "Risol Beef", opening: 30, purchased: 0, sold: 25, damaged: 0, bonus: 1, closing: 4 },
-          { product: "Risol Cheese", opening: 20, purchased: 0, sold: 15, damaged: 0, bonus: 0, closing: 5 },
-        ],
-        summary: {
-          totalSales: 380000,
-          totalCashSales: 228000,
-          totalQrisSales: 152000,
-          totalTransactions: 14,
-          totalItemsSold: 75,
-          averageTransactionValue: 27143,
-          topProducts: [
-            { name: "Risol Mayo", quantity: 35, revenue: 280000 },
-            { name: "Risol Beef", quantity: 25, revenue: 250000 },
-            { name: "Risol Cheese", quantity: 15, revenue: 120000 },
-          ]
-        }
-      };
+      const response = await fetch(`/api/history/${date}`, {
+        credentials: 'include'
+      });
 
-      setDayDetail(mockDetail);
+      if (!response.ok) {
+        throw new Error('Failed to fetch day detail');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setDayDetail(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to fetch day detail');
+      }
     } catch (error) {
       console.error("Error fetching day detail:", error);
       toast({
@@ -263,13 +224,19 @@ export default function HistoryDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${dayDetail.closingData.cashDiscrepancy >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {dayDetail.closingData.cashDiscrepancy >= 0 ? '+' : ''}{formatCurrency(dayDetail.closingData.cashDiscrepancy)}
-              </div>
-              {dayDetail.closingData.note && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {dayDetail.closingData.note}
-                </div>
+              {dayDetail.closingData ? (
+                <>
+                  <div className={`text-2xl font-bold ${dayDetail.closingData.cashDiscrepancy >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {dayDetail.closingData.cashDiscrepancy >= 0 ? '+' : ''}{formatCurrency(dayDetail.closingData.cashDiscrepancy)}
+                  </div>
+                  {dayDetail.closingData.note && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {dayDetail.closingData.note}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-2xl font-bold text-gray-400">-</div>
               )}
             </CardContent>
           </Card>
@@ -285,22 +252,28 @@ export default function HistoryDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{dayDetail.openingData.time}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{dayDetail.openingData.user}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span>Kas: {formatCurrency(dayDetail.openingData.openingCash)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                <span>Stok: {dayDetail.openingData.stockCount} pcs</span>
-              </div>
+              {dayDetail.openingData ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>{dayDetail.openingData.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{dayDetail.openingData.user}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span>Kas: {formatCurrency(dayDetail.openingData.openingCash)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span>Stok: {dayDetail.openingData.stockCount} pcs</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Tidak ada data pembukaan</p>
+              )}
             </CardContent>
           </Card>
 
@@ -312,22 +285,28 @@ export default function HistoryDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{dayDetail.closingData.time}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{dayDetail.closingData.user}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span>Kas Aktual: {formatCurrency(dayDetail.closingData.closingCash)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span>Kas Expected: {formatCurrency(dayDetail.closingData.expectedCash)}</span>
-              </div>
+              {dayDetail.closingData ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>{dayDetail.closingData.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{dayDetail.closingData.user}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span>Kas Aktual: {formatCurrency(dayDetail.closingData.closingCash)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <span>Kas Expected: {formatCurrency(dayDetail.closingData.expectedCash)}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Belum ada penutupan</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -371,7 +350,7 @@ export default function HistoryDetailPage() {
                           <TableCell>
                             {trans.items.map((item, idx) => (
                               <div key={idx} className="text-sm">
-                                {item.name} × {item.quantity}
+                                {item.name} {item.variant ? `- ${item.variant}` : ''} × {item.quantity}
                               </div>
                             ))}
                           </TableCell>
@@ -414,6 +393,7 @@ export default function HistoryDetailPage() {
                         <TableHead className="text-center">Jual</TableHead>
                         <TableHead className="text-center">Rusak</TableHead>
                         <TableHead className="text-center">Bonus</TableHead>
+                        <TableHead className="text-center">Buang</TableHead>
                         <TableHead className="text-center">Closing</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -433,6 +413,9 @@ export default function HistoryDetailPage() {
                           </TableCell>
                           <TableCell className="text-center text-blue-600">
                             {stock.bonus > 0 ? `-${stock.bonus}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-center text-gray-600">
+                            {stock.disposal > 0 ? `-${stock.disposal}` : '-'}
                           </TableCell>
                           <TableCell className="text-center font-medium">{stock.closing}</TableCell>
                         </TableRow>
