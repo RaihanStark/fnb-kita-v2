@@ -94,11 +94,7 @@ export async function GET(
       const stepData = procedure.stepData as any;
 
       // Extract stock discrepancy information
-      console.log("Full step data:", JSON.stringify(stepData, null, 2));
       const stockItems = stepData?.step2?.stockItems || [];
-
-      // Debug logging
-      console.log("Raw stock items:", JSON.stringify(stockItems, null, 2));
 
       const discrepancyItems = stockItems.filter((item: any) => {
         // Convert to numbers to handle string values
@@ -106,18 +102,8 @@ export async function GET(
         const excessCount = Number(item.excessCount) || 0;
         const hasMissing = missingCount > 0;
         const hasExcess = excessCount > 0;
-
-        console.log(
-          `Item ${item.name} - ${item.variant}: missingCount=${
-            item.missingCount
-          } (${typeof item.missingCount}), excessCount=${
-            item.excessCount
-          } (${typeof item.excessCount}), hasMissing=${hasMissing}, hasExcess=${hasExcess}`
-        );
         return hasMissing || hasExcess;
       });
-
-      console.log("Discrepancy items found:", discrepancyItems.length);
 
       // Format discrepancy items for display
       const formattedDiscrepancies = discrepancyItems.map((item: any) => {
@@ -135,8 +121,6 @@ export async function GET(
           discrepancyAmount: missingCount > 0 ? missingCount : excessCount,
         };
       });
-
-      console.log("Formatted discrepancies:", formattedDiscrepancies);
 
       openingData = {
         time: procedure.createdAt.toLocaleTimeString("id-ID", {
@@ -160,12 +144,6 @@ export async function GET(
         hasDiscrepancies: formattedDiscrepancies.length > 0,
         totalDiscrepancies: formattedDiscrepancies.length,
       };
-
-      console.log("Final opening data:", {
-        hasDiscrepancies: formattedDiscrepancies.length > 0,
-        totalDiscrepancies: formattedDiscrepancies.length,
-        discrepancies: formattedDiscrepancies,
-      });
     }
 
     // Process closing data
@@ -173,6 +151,38 @@ export async function GET(
     if (closingResult[0]) {
       const { procedure, user } = closingResult[0];
       const stepData = procedure.stepData as any;
+
+      // Extract stock discrepancy information for closing
+      const closingStockItems =
+        stepData?.step2?.stockItems || stepData?.[2]?.stockItems || [];
+
+      const closingDiscrepancyItems = closingStockItems.filter((item: any) => {
+        // Convert to numbers to handle string values
+        const missingCount = Number(item.missingCount) || 0;
+        const excessCount = Number(item.excessCount) || 0;
+        const hasMissing = missingCount > 0;
+        const hasExcess = excessCount > 0;
+        return hasMissing || hasExcess;
+      });
+
+      // Format closing discrepancy items for display
+      const formattedClosingDiscrepancies = closingDiscrepancyItems.map(
+        (item: any) => {
+          const missingCount = Number(item.missingCount) || 0;
+          const excessCount = Number(item.excessCount) || 0;
+
+          return {
+            name: item.variant ? `${item.name} - ${item.variant}` : item.name,
+            type: item.type || "product",
+            unit: item.unit || "pcs",
+            missingCount: missingCount,
+            excessCount: excessCount,
+            notes: item.notes || "",
+            discrepancyType: missingCount > 0 ? "missing" : "excess",
+            discrepancyAmount: missingCount > 0 ? missingCount : excessCount,
+          };
+        }
+      );
 
       closingData = {
         time: procedure.createdAt.toLocaleTimeString("id-ID", {
@@ -204,6 +214,12 @@ export async function GET(
           stepData?.[5]?.discrepancyNote ||
           stepData?.step1?.notes ||
           null,
+        // Add stock discrepancy information
+        stockDiscrepancies: formattedClosingDiscrepancies,
+        stockGeneralNotes:
+          stepData?.step2?.generalNotes || stepData?.[2]?.generalNotes || "",
+        hasStockDiscrepancies: formattedClosingDiscrepancies.length > 0,
+        totalStockDiscrepancies: formattedClosingDiscrepancies.length,
       };
     }
 

@@ -63,6 +63,20 @@ interface DayDetail {
     expectedCash: number;
     cashDiscrepancy: number;
     note?: string;
+    // Add stock discrepancy information
+    stockDiscrepancies?: Array<{
+      name: string;
+      type: string;
+      unit: string;
+      missingCount: number;
+      excessCount: number;
+      notes: string;
+      discrepancyType: "missing" | "excess";
+      discrepancyAmount: number;
+    }>;
+    stockGeneralNotes?: string;
+    hasStockDiscrepancies?: boolean;
+    totalStockDiscrepancies?: number;
   } | null;
   transactions: Array<{
     id: string;
@@ -429,27 +443,145 @@ export default function HistoryDetailPage() {
                 Penutupan
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               {dayDetail.closingData ? (
                 <>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{dayDetail.closingData.time}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{dayDetail.closingData.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>{dayDetail.closingData.user}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Kas Aktual:{" "}
+                        {formatCurrency(dayDetail.closingData.closingCash)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Kas Expected:{" "}
+                        {formatCurrency(dayDetail.closingData.expectedCash)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      Kas Aktual:{" "}
-                      {formatCurrency(dayDetail.closingData.closingCash)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      Kas Expected:{" "}
-                      {formatCurrency(dayDetail.closingData.expectedCash)}
-                    </span>
-                  </div>
+
+                  {/* Stock Discrepancy Information */}
+                  {dayDetail.closingData.hasStockDiscrepancies &&
+                    dayDetail.closingData.stockDiscrepancies && (
+                      <div className="border-t pt-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
+                          <span className="text-sm font-medium text-amber-800">
+                            Selisih Stok (
+                            {dayDetail.closingData.totalStockDiscrepancies}{" "}
+                            item)
+                          </span>
+                        </div>
+
+                        {/* Summary of discrepancies */}
+                        <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-xs">
+                          <div className="font-medium text-amber-800 mb-1">
+                            Ringkasan Selisih:
+                          </div>
+                          <div className="space-y-1">
+                            {(() => {
+                              const missingItems =
+                                dayDetail.closingData.stockDiscrepancies.filter(
+                                  (d) => d.discrepancyType === "missing"
+                                );
+                              const excessItems =
+                                dayDetail.closingData.stockDiscrepancies.filter(
+                                  (d) => d.discrepancyType === "excess"
+                                );
+
+                              return (
+                                <>
+                                  {missingItems.length > 0 && (
+                                    <div className="text-red-700">
+                                      • {missingItems.length} item hilang
+                                    </div>
+                                  )}
+                                  {excessItems.length > 0 && (
+                                    <div className="text-blue-700">
+                                      • {excessItems.length} item kelebihan
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Detailed discrepancy items */}
+                        <div className="space-y-2">
+                          {dayDetail.closingData.stockDiscrepancies.map(
+                            (item, index) => (
+                              <div
+                                key={index}
+                                className="text-xs bg-amber-50 border border-amber-200 rounded p-2"
+                              >
+                                <div className="flex items-center gap-1 mb-1">
+                                  <span className="font-medium">
+                                    {item.name}
+                                  </span>
+                                  <Badge
+                                    variant={
+                                      item.discrepancyType === "missing"
+                                        ? "destructive"
+                                        : "secondary"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {item.discrepancyType === "missing"
+                                      ? "Hilang"
+                                      : "Kelebihan"}
+                                  </Badge>
+                                </div>
+                                <div className="text-amber-700">
+                                  {item.discrepancyType === "missing"
+                                    ? `Hilang: ${item.discrepancyAmount} ${item.unit}`
+                                    : `Kelebihan: ${item.discrepancyAmount} ${item.unit}`}
+                                </div>
+                                {item.notes && (
+                                  <div className="text-amber-600 mt-1 italic">
+                                    <span className="font-medium">
+                                      Catatan:
+                                    </span>{" "}
+                                    "{item.notes}"
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* No Stock Discrepancies Message */}
+                  {!dayDetail.closingData.hasStockDiscrepancies && (
+                    <div className="border-t pt-3">
+                      <div className="flex items-center gap-2 text-sm text-green-700">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Tidak ada selisih stok</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stock General Notes */}
+                  {dayDetail.closingData.stockGeneralNotes && (
+                    <div className="border-t pt-3">
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Catatan Stok:</span>{" "}
+                        {dayDetail.closingData.stockGeneralNotes}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
