@@ -253,9 +253,16 @@ export default function TransactionsPage() {
                         )}
                         
                         {transaction.type === 'sales' && transaction.totalAmount && (
-                          <p className="font-semibold text-gray-900 mt-2">
-                            {formatCurrency(transaction.totalAmount)}
-                          </p>
+                          <div className="mt-2">
+                            <p className="font-semibold text-gray-900">
+                              {formatCurrency(transaction.totalAmount)}
+                            </p>
+                            {transaction.paymentMethod && (
+                              <p className="text-xs text-gray-500">
+                                {transaction.paymentMethod === 'cash' ? 'Tunai' : 'QRIS'}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

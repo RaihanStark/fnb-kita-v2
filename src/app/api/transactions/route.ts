@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     const db = getDb()
     const body = await request.json()
-    const { type, items, totalAmount, notes } = body
+    const { type, items, totalAmount, paymentMethod, notes } = body
 
     // Validate input
     if (!type || !items || items.length === 0) {
@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
         type,
         items,
         totalAmount: totalAmount ? String(totalAmount) : null,
+        paymentMethod: type === 'sales' ? (paymentMethod || 'cash') : null,
         notes,
         date: getDateInUTC7()
       })

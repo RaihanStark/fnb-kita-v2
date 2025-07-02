@@ -50,6 +50,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
   const [items, setItems] = useState<TransactionItem[]>([])
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qris'>('cash')
   const [transactionId, setTransactionId] = useState<string>('')
   const [products, setProducts] = useState<Product[]>([])
   const [productStocks, setProductStocks] = useState<Stock[]>([])
@@ -109,6 +110,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
       setType(data.type)
       setItems(data.items)
       setNotes(data.notes || '')
+      setPaymentMethod(data.paymentMethod || 'cash')
     } catch (error) {
       toast({
         title: "Error",
@@ -323,6 +325,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
           type,
           items,
           totalAmount: type === 'sales' ? getTotalAmount() : null,
+          paymentMethod: type === 'sales' ? paymentMethod : null,
           notes
         })
       })
@@ -528,6 +531,32 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
             </RadioGroup>
           </CardContent>
         </Card>
+
+        {/* Payment Method - Only show for sales */}
+        {type === 'sales' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Metode Pembayaran</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as 'cash' | 'qris')}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <Label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="cash" />
+                    <span>Tunai</span>
+                  </Label>
+                  <Label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="qris" />
+                    <span>QRIS</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Product Selection */}
         <Card className="mb-6">
