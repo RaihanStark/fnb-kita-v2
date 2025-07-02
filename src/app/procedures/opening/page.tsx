@@ -1,12 +1,12 @@
 'use client'
 
-import { OpeningProcedureFlow } from '@/components/procedures/opening/OpeningProcedureFlow'
+import { SimplifiedOpeningFlow } from '@/components/procedures/opening/SimplifiedOpeningFlow'
 import { AppLayout } from '@/components/layout/app-layout'
 
 export default function OpeningProcedurePage() {
   return (
-    <AppLayout>
-      <OpeningProcedureFlow />
+    <AppLayout title="Prosedur Pembukaan">
+      <SimplifiedOpeningFlow />
     </AppLayout>
   )
 }

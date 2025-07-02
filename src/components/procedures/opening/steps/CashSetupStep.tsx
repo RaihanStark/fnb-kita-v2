@@ -52,7 +52,6 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
     );
   };
 
-
   const handleSubmit = () => {
     onNext({
       denominations,
@@ -63,16 +62,6 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Banknote className="h-5 w-5" />
-          Modal Awal
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Catat uang kembalian yang disiapkan
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Pecahan Uang</CardTitle>
@@ -88,9 +77,7 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
                 <NumberInput
                   min={0}
                   value={denom.count}
-                  onChange={(value) =>
-                    updateDenomination(index, value || 0)
-                  }
+                  onChange={(value) => updateDenomination(index, value || 0)}
                   className="w-24"
                   placeholder="0"
                   allowDecimals={false}

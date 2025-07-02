@@ -84,17 +84,38 @@ export async function POST(req: NextRequest) {
     // Prepare update object (timestamps will be stored in UTC)
     const updateData: any = {
       stepData: updatedStepData,
-      currentStep: completed ? stepNumber + 1 : stepNumber,
       updatedAt: new Date(),
     };
 
-    // Set step completion timestamp
-    updateData[`step${stepNumber}CompletedAt`] = completed ? new Date() : null;
+    // Set step completion timestamp if marking as completed
+    if (completed) {
+      updateData[`step${stepNumber}CompletedAt`] = new Date();
+      
+      // Add completion timestamp to step data
+      updatedStepData[`step${stepNumber}`].completedAt = new Date().toISOString();
+    }
 
-    // If this is the last step and it's completed, mark the whole procedure as completed
-    if (stepNumber === 5 && completed) {
+    // Check if all steps are completed (for non-sequential flow)
+    let allStepsCompleted = true;
+    for (let i = 1; i <= 5; i++) {
+      const stepKey = `step${i}`;
+      const isCurrentStep = i === stepNumber && completed;
+      const hasCompletedData = updatedStepData[stepKey]?.completedAt;
+      
+      if (!isCurrentStep && !hasCompletedData) {
+        allStepsCompleted = false;
+        break;
+      }
+    }
+
+    // If all steps are completed, mark the whole procedure as completed
+    if (allStepsCompleted) {
       updateData.completed = true;
       updateData.completedAt = new Date();
+      updateData.currentStep = 6; // Beyond the last step
+    } else {
+      // Keep current step for backward compatibility
+      updateData.currentStep = stepNumber;
     }
 
     // Update the opening procedure
