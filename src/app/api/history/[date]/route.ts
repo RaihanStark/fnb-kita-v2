@@ -161,8 +161,10 @@ export async function GET(
       const stockItems = stepData?.step2?.stockItems || [];
 
       for (const item of stockItems) {
-        stockMovementMap.set(item.name, {
-          opening: item.totalCount || 0,
+        const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
+        const openingCount = (item.frozenCount || 0) + (item.readyCount || 0);
+        stockMovementMap.set(key, {
+          opening: openingCount,
           purchased: 0,
           sold: 0,
           damaged: 0,
@@ -205,19 +207,41 @@ export async function GET(
       }
     }
 
+    // Add closing stock data if available
+    if (closingResult[0]) {
+      const closingStepData = closingResult[0].procedure.stepData as any;
+      const closingStockItems = closingStepData?.step2?.stockItems || closingStepData?.[2]?.stockItems || [];
+      
+      for (const item of closingStockItems) {
+        const key = item.variant ? `${item.name} - ${item.variant}` : item.name;
+        const movement = stockMovementMap.get(key);
+        if (movement) {
+          // Use actual closing count if available
+          const actualClosing = item.totalCount || (item.currentStock ? parseFloat(item.currentStock) : null);
+          if (actualClosing !== null && actualClosing !== undefined) {
+            // We'll add this to the movement object for display
+            (movement as any).actualClosing = actualClosing;
+          }
+        }
+      }
+    }
+
     // Convert to array and calculate closing
     const stockMovements = Array.from(stockMovementMap.entries()).map(
-      ([product, movement]) => ({
-        product,
-        ...movement,
-        closing:
-          movement.opening +
+      ([product, movement]) => {
+        const calculatedClosing = movement.opening +
           movement.purchased -
           movement.sold -
           movement.damaged -
           movement.bonus -
-          movement.disposal,
-      })
+          movement.disposal;
+        
+        return {
+          product,
+          ...movement,
+          closing: (movement as any).actualClosing !== undefined ? (movement as any).actualClosing : calculatedClosing,
+        };
+      }
     );
 
     // Calculate summary
