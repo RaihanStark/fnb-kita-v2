@@ -311,6 +311,9 @@ export function SimplifiedClosingFlow() {
   };
 
   const handleStepClick = (stepId: number) => {
+    if (completedSteps.has(stepId)) {
+      return;
+    }
     setSelectedStep(stepId);
   };
 
