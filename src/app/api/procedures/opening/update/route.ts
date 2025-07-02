@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, openingProcedures, users } from '@/lib/db';
+import { getDb, openingProcedures, users, stocks } from '@/lib/db';
 import { authenticateUser } from '@/lib/auth/middleware';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
@@ -124,6 +124,49 @@ export async function POST(req: NextRequest) {
       .set(updateData)
       .where(eq(openingProcedures.id, openingId))
       .returning();
+
+    // If step 2 (stock count) is completed, update stock levels
+    if (stepNumber === 2 && completed && stepData.stockItems) {
+      try {
+        // Process each stock item
+        for (const item of stepData.stockItems) {
+          // Get current stock record
+          const stockRecord = await db
+            .select()
+            .from(stocks)
+            .where(eq(stocks.name, item.type === 'product' ? `${item.name} - ${item.variant}` : item.name))
+            .limit(1);
+
+          if (stockRecord.length > 0) {
+            const currentStockRecord = stockRecord[0];
+            
+            // Calculate new stock based on item type
+            let newStock: number;
+            
+            if (item.type === 'product') {
+              // For products: frozenCount + readyCount
+              newStock = (item.frozenCount || 0) + (item.readyCount || 0);
+            } else {
+              // For other items: currentCount
+              newStock = item.currentCount || 0;
+            }
+
+            // Update the current stock
+            await db
+              .update(stocks)
+              .set({
+                currentStock: newStock.toString(),
+                updatedAt: new Date(),
+              })
+              .where(eq(stocks.id, currentStockRecord.id));
+          }
+        }
+      } catch (stockError) {
+        console.error('Error updating stock levels:', stockError);
+        // Note: We don't fail the whole operation if stock update fails
+        // The opening procedure is still saved
+      }
+    }
 
     return NextResponse.json({
       success: true,
