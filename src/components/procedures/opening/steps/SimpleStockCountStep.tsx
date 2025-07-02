@@ -170,32 +170,40 @@ export function SimpleStockCountStep({
   // Get items with stock discrepancies (both missing and excess)
   const getDiscrepancyItems = () => {
     const productDiscrepancies = stockItems
-      .filter(item => item.currentStock !== item.totalCount)
-      .map(item => ({
+      .filter((item) => item.currentStock !== item.totalCount)
+      .map((item) => ({
         ...item,
-        type: 'product' as const,
+        type: "product" as const,
         discrepancy: item.currentStock - item.totalCount,
-        discrepancyType: item.totalCount > item.currentStock ? 'excess' : 'missing' as 'excess' | 'missing'
+        discrepancyType:
+          item.totalCount > item.currentStock
+            ? "excess"
+            : ("missing" as "excess" | "missing"),
       }));
 
     const otherDiscrepancies = otherItems
-      .filter(item => item.currentStock !== item.count)
-      .map(item => ({
+      .filter((item) => item.currentStock !== item.count)
+      .map((item) => ({
         ...item,
         type: item.type,
         discrepancy: item.currentStock - item.count,
-        discrepancyType: item.count > item.currentStock ? 'excess' : 'missing' as 'excess' | 'missing'
+        discrepancyType:
+          item.count > item.currentStock
+            ? "excess"
+            : ("missing" as "excess" | "missing"),
       }));
 
     return [...productDiscrepancies, ...otherDiscrepancies];
   };
 
-  const [discrepancyNotes, setDiscrepancyNotes] = useState<Record<string, string>>({});
+  const [discrepancyNotes, setDiscrepancyNotes] = useState<
+    Record<string, string>
+  >({});
 
   const updateDiscrepancyNote = (itemId: string, note: string) => {
-    setDiscrepancyNotes(prev => ({
+    setDiscrepancyNotes((prev) => ({
       ...prev,
-      [itemId]: note
+      [itemId]: note,
     }));
   };
 
@@ -203,21 +211,22 @@ export function SimpleStockCountStep({
     // Check if all discrepancies have notes
     const discrepancies = getDiscrepancyItems();
     const missingNotes = discrepancies.filter(
-      item => !discrepancyNotes[item.id] || discrepancyNotes[item.id].trim() === ''
+      (item) =>
+        !discrepancyNotes[item.id] || discrepancyNotes[item.id].trim() === ""
     );
 
     if (missingNotes.length > 0) {
       toast({
         title: "Catatan Diperlukan",
         description: "Harap jelaskan semua selisih stok sebelum menyimpan",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
     // Convert simple format back to expected format for compatibility
     const convertedProductItems = stockItems.map((item) => {
       const discrepancy = item.currentStock - item.totalCount;
-      
+
       return {
         id: item.id,
         name: item.name,
@@ -236,7 +245,7 @@ export function SimpleStockCountStep({
     // Convert other items to expected format
     const convertedOtherItems = otherItems.map((item) => {
       const discrepancy = item.currentStock - item.count;
-      
+
       return {
         id: item.id,
         name: item.name,
@@ -455,47 +464,75 @@ export function SimpleStockCountStep({
                   Ada selisih stok yang perlu dijelaskan
                 </AlertDescription>
                 <p className="text-xs text-amber-700 mt-1">
-                  Harap jelaskan alasan selisih stok untuk setiap item di bawah ini
+                  Harap jelaskan alasan selisih stok untuk setiap item di bawah
+                  ini
                 </p>
               </div>
             </div>
           </Alert>
-          
+
           <div className="space-y-3">
             {getDiscrepancyItems().map((item) => {
-              const isExcess = item.discrepancyType === 'excess';
-              const borderColor = isExcess ? 'border-blue-200' : 'border-red-200';
-              const bgColor = isExcess ? 'bg-blue-50' : 'bg-red-50';
-              
+              const isExcess = item.discrepancyType === "excess";
+              const borderColor = isExcess
+                ? "border-blue-200"
+                : "border-red-200";
+              const bgColor = isExcess ? "bg-blue-50" : "bg-red-50";
+
               return (
-                <div key={item.id} className={`bg-white rounded-lg border ${borderColor} p-4`}>
+                <div
+                  key={item.id}
+                  className={`bg-white rounded-lg border ${borderColor} p-4`}
+                >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <p className="font-medium text-sm">
-                        {item.name} {'variant' in item && item.variant && `- ${item.variant}`}
+                        {item.name}{" "}
+                        {"variant" in item &&
+                          item.variant &&
+                          `- ${item.variant}`}
                       </p>
                       <p className="text-xs text-gray-600 mt-0.5">
-                        Perkiraan: {'totalCount' in item ? item.currentStock : item.currentStock} {item.unit} | 
-                        Terhitung: {'totalCount' in item ? item.totalCount : item.count} {item.unit} | 
+                        Perkiraan:{" "}
+                        {"totalCount" in item
+                          ? item.currentStock
+                          : item.currentStock}{" "}
+                        {item.unit} | Terhitung:{" "}
+                        {"totalCount" in item ? item.totalCount : item.count}{" "}
+                        {item.unit} |
                         {isExcess ? (
-                          <span className="text-blue-600 font-medium"> Kelebihan: {Math.abs(item.discrepancy)} {item.unit}</span>
+                          <span className="text-blue-600 font-medium">
+                            {" "}
+                            Kelebihan: {Math.abs(item.discrepancy)} {item.unit}
+                          </span>
                         ) : (
-                          <span className="text-red-600 font-medium"> Hilang: {Math.abs(item.discrepancy)} {item.unit}</span>
+                          <span className="text-red-600 font-medium">
+                            {" "}
+                            Hilang: {Math.abs(item.discrepancy)} {item.unit}
+                          </span>
                         )}
                       </p>
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor={`discrepancy-${item.id}`} className="text-xs">
-                      {isExcess ? 'Alasan kelebihan' : 'Alasan hilang'} <span className="text-red-500">*</span>
+                    <Label
+                      htmlFor={`discrepancy-${item.id}`}
+                      className="text-xs"
+                    >
+                      {isExcess ? "Alasan kelebihan" : "Alasan hilang"}{" "}
+                      <span className="text-red-500">*</span>
                     </Label>
                     <Textarea
                       id={`discrepancy-${item.id}`}
-                      placeholder={isExcess 
-                        ? "Contoh: Stok tambahan dari supplier, salah hitung sebelumnya, dll..." 
-                        : "Contoh: Rusak saat penyimpanan, kadaluarsa, dll..."}
-                      value={discrepancyNotes[item.id] || ''}
-                      onChange={(e) => updateDiscrepancyNote(item.id, e.target.value)}
+                      placeholder={
+                        isExcess
+                          ? "Contoh: Stok tambahan dari supplier, salah hitung sebelumnya, dll..."
+                          : "Contoh: Rusak saat penyimpanan, kadaluarsa, dll..."
+                      }
+                      value={discrepancyNotes[item.id] || ""}
+                      onChange={(e) =>
+                        updateDiscrepancyNote(item.id, e.target.value)
+                      }
                       rows={2}
                       className="mt-1 text-sm"
                       required
@@ -514,7 +551,7 @@ export function SimpleStockCountStep({
           className="w-full md:w-auto"
           disabled={loading || stockItems.length === 0}
         >
-          Simpan Stok
+          Simpan
         </Button>
       </div>
     </div>

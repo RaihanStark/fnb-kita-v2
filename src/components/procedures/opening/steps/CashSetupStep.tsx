@@ -123,7 +123,7 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
 
       <div className="flex justify-end">
         <Button onClick={handleSubmit} className="w-full md:w-auto">
-          Lanjut ke Checklist Akhir
+          Simpan
         </Button>
       </div>
     </div>
