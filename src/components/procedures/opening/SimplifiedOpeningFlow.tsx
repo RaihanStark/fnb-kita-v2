@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -42,11 +42,13 @@ export function SimplifiedOpeningFlow() {
   const [stepData, setStepData] = useState<Record<number, any>>({});
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isFinalized, setIsFinalized] = useState(false);
   const [openingId, setOpeningId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [alreadyCompletedToday, setAlreadyCompletedToday] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
@@ -81,7 +83,7 @@ export function SimplifiedOpeningFlow() {
           const completed = new Set<number>();
           STEPS.forEach((step) => {
             const stepKey = `step${step.id}`;
-            if (checkResult.opening.stepData?.[stepKey]?.completedAt) {
+            if (checkResult.opening?.stepData?.[stepKey]?.completedAt) {
               completed.add(step.id);
             }
           });
@@ -112,6 +114,7 @@ export function SimplifiedOpeningFlow() {
         setStepData({});
         setCompletedSteps(new Set());
         setIsCompleted(false);
+        setIsFinalized(false);
       } else {
         // If opening already exists, refresh the page to load it
         if (startResult.error?.includes("already exists")) {
@@ -156,70 +159,6 @@ export function SimplifiedOpeningFlow() {
         newCompletedSteps.add(stepId);
         setCompletedSteps(newCompletedSteps);
 
-        // Check if all steps are completed
-        if (newCompletedSteps.size === STEPS.length) {
-          // Mark other steps as completed with empty data
-          const finalStepData = { ...newStepData };
-
-          // Auto-complete step 1 (Hygiene)
-          if (!finalStepData.step1) {
-            await openingProcedureService.updateStep(
-              openingId,
-              1,
-              {
-                handWashing: true,
-                areaClean: true,
-                utensilsClean: true,
-                pestFree: true,
-                notes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-              },
-              true
-            );
-          }
-
-          // Auto-complete step 3 (Display)
-          if (!finalStepData.step3) {
-            await openingProcedureService.updateStep(
-              openingId,
-              3,
-              {
-                arranged: true,
-                labeled: true,
-                temperatureChecked: true,
-                coverReady: true,
-                notes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-              },
-              true
-            );
-          }
-
-          // Auto-complete step 5 (Final Checklist)
-          if (!finalStepData.step5) {
-            await openingProcedureService.updateStep(
-              openingId,
-              5,
-              {
-                salesBookReady: true,
-                priceListVisible: true,
-                packagingReady: true,
-                mobilePaymentReady: true,
-                personalReady: true,
-                additionalNotes: "Auto-completed",
-                completedAt: new Date().toISOString(),
-                allStepsCompleted: true,
-              },
-              true
-            );
-          }
-
-          setIsCompleted(true);
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 2000);
-        }
-
         // Clear selected step
         setSelectedStep(null);
       } else {
@@ -233,10 +172,85 @@ export function SimplifiedOpeningFlow() {
     }
   };
 
-  const handleStepClick = (stepId: number) => {
-    if (!completedSteps.has(stepId)) {
-      setSelectedStep(stepId);
+  const handleFinalizeOpening = async () => {
+    if (!openingId) return;
+
+    try {
+      setFinalizing(true);
+      setError("");
+
+      // Auto-complete missing steps
+      const finalStepData = { ...stepData };
+
+      // Auto-complete step 1 (Hygiene)
+      if (!finalStepData[1]) {
+        await openingProcedureService.updateStep(
+          openingId,
+          1,
+          {
+            handWashing: true,
+            areaClean: true,
+            utensilsClean: true,
+            pestFree: true,
+            notes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+          },
+          true
+        );
+      }
+
+      // Auto-complete step 3 (Display)
+      if (!finalStepData[3]) {
+        await openingProcedureService.updateStep(
+          openingId,
+          3,
+          {
+            arranged: true,
+            labeled: true,
+            temperatureChecked: true,
+            coverReady: true,
+            notes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+          },
+          true
+        );
+      }
+
+      // Auto-complete step 5 (Final Checklist)
+      if (!finalStepData[5]) {
+        await openingProcedureService.updateStep(
+          openingId,
+          5,
+          {
+            salesBookReady: true,
+            priceListVisible: true,
+            packagingReady: true,
+            mobilePaymentReady: true,
+            personalReady: true,
+            additionalNotes: "Auto-completed",
+            completedAt: new Date().toISOString(),
+            allStepsCompleted: true,
+          },
+          true
+        );
+      }
+
+      // The API will automatically mark the opening as completed when all steps are done
+      setIsFinalized(true);
+      setIsCompleted(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+    } catch (err) {
+      console.error("Error finalizing opening:", err);
+      setError("Failed to finalize opening. Please try again.");
+    } finally {
+      setFinalizing(false);
     }
+  };
+
+  const handleStepClick = (stepId: number) => {
+    setSelectedStep(stepId);
   };
 
   const getStepStatus = (stepId: number) => {
@@ -478,8 +492,35 @@ export function SimplifiedOpeningFlow() {
           })}
         </div>
       )}
+
+      {/* Finalize Opening Button */}
+      {!selectedStep && !isFinalized && (
+        <div className="text-center mt-8">
+          <Button
+            size="lg"
+            onClick={handleFinalizeOpening}
+            disabled={finalizing || completedSteps.size === 0}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            {finalizing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Menyelesaikan...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-5 w-5" />
+                Selesaikan Pembukaan
+              </>
+            )}
+          </Button>
+          {completedSteps.size === 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              Selesaikan setidaknya satu langkah terlebih dahulu
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-
-import React from "react";
