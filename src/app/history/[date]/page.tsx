@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
+import {
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -28,7 +28,7 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format";
 import { formatDateUTC7, formatTimeWIB } from "@/lib/utils/format-date";
@@ -56,7 +56,12 @@ interface DayDetail {
     id: string;
     time: string;
     type: string;
-    items: Array<{ name: string; variant?: string; quantity: number; price?: number }>;
+    items: Array<{
+      name: string;
+      variant?: string;
+      quantity: number;
+      price?: number;
+    }>;
     totalAmount?: number;
     paymentMethod?: string;
     notes?: string;
@@ -100,26 +105,26 @@ export default function HistoryDetailPage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/history/${date}`, {
-        credentials: 'include'
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch day detail');
+        throw new Error("Failed to fetch day detail");
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         setDayDetail(result.data);
       } else {
-        throw new Error(result.error || 'Failed to fetch day detail');
+        throw new Error(result.error || "Failed to fetch day detail");
       }
     } catch (error) {
       console.error("Error fetching day detail:", error);
       toast({
         title: "Error",
         description: "Gagal memuat detail hari",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -154,7 +159,7 @@ export default function HistoryDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/history')}
+            onClick={() => router.push("/history")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali
@@ -162,7 +167,8 @@ export default function HistoryDetailPage() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Calendar className="h-6 w-6" />
-              {dayDetail.dayName}, {formatDateUTC7(new Date(date), 'd MMMM yyyy')}
+              {dayDetail.dayName},{" "}
+              {formatDateUTC7(new Date(date), "d MMMM yyyy")}
             </h1>
           </div>
         </div>
@@ -199,7 +205,8 @@ export default function HistoryDetailPage() {
                 {dayDetail.summary.totalTransactions}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Rata-rata: {formatCurrency(dayDetail.summary.averageTransactionValue)}
+                Rata-rata:{" "}
+                {formatCurrency(dayDetail.summary.averageTransactionValue)}
               </div>
             </CardContent>
           </Card>
@@ -226,8 +233,15 @@ export default function HistoryDetailPage() {
             <CardContent>
               {dayDetail.closingData ? (
                 <>
-                  <div className={`text-2xl font-bold ${dayDetail.closingData.cashDiscrepancy >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {dayDetail.closingData.cashDiscrepancy >= 0 ? '+' : ''}{formatCurrency(dayDetail.closingData.cashDiscrepancy)}
+                  <div
+                    className={`text-2xl font-bold ${
+                      dayDetail.closingData.cashDiscrepancy >= 0
+                        ? "text-blue-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {dayDetail.closingData.cashDiscrepancy >= 0 ? "+" : ""}
+                    {formatCurrency(dayDetail.closingData.cashDiscrepancy)}
                   </div>
                   {dayDetail.closingData.note && (
                     <div className="text-xs text-muted-foreground mt-1">
@@ -259,12 +273,10 @@ export default function HistoryDetailPage() {
                     <span>{dayDetail.openingData.time}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{dayDetail.openingData.user}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>Kas: {formatCurrency(dayDetail.openingData.openingCash)}</span>
+                    <span>
+                      Kas: {formatCurrency(dayDetail.openingData.openingCash)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Package className="h-4 w-4 text-muted-foreground" />
@@ -272,7 +284,9 @@ export default function HistoryDetailPage() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Tidak ada data pembukaan</p>
+                <p className="text-sm text-muted-foreground">
+                  Tidak ada data pembukaan
+                </p>
               )}
             </CardContent>
           </Card>
@@ -297,15 +311,23 @@ export default function HistoryDetailPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>Kas Aktual: {formatCurrency(dayDetail.closingData.closingCash)}</span>
+                    <span>
+                      Kas Aktual:{" "}
+                      {formatCurrency(dayDetail.closingData.closingCash)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <span>Kas Expected: {formatCurrency(dayDetail.closingData.expectedCash)}</span>
+                    <span>
+                      Kas Expected:{" "}
+                      {formatCurrency(dayDetail.closingData.expectedCash)}
+                    </span>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Belum ada penutupan</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada penutupan
+                </p>
               )}
             </CardContent>
           </Card>
@@ -341,31 +363,45 @@ export default function HistoryDetailPage() {
                     <TableBody>
                       {dayDetail.transactions.map((trans) => (
                         <TableRow key={trans.id}>
-                          <TableCell className="font-medium">{trans.time}</TableCell>
+                          <TableCell className="font-medium">
+                            {trans.time}
+                          </TableCell>
                           <TableCell>
-                            <Badge variant={trans.type === 'sales' ? 'default' : 'destructive'}>
-                              {trans.type === 'sales' ? 'Penjualan' : 'Rusak'}
+                            <Badge
+                              variant={
+                                trans.type === "sales"
+                                  ? "default"
+                                  : "destructive"
+                              }
+                            >
+                              {trans.type === "sales" ? "Penjualan" : "Rusak"}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             {trans.items.map((item, idx) => (
                               <div key={idx} className="text-sm">
-                                {item.name} {item.variant ? `- ${item.variant}` : ''} × {item.quantity}
+                                {item.name}{" "}
+                                {item.variant ? `- ${item.variant}` : ""} ×{" "}
+                                {item.quantity}
                               </div>
                             ))}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            {trans.totalAmount ? formatCurrency(trans.totalAmount) : '-'}
+                            {trans.totalAmount
+                              ? formatCurrency(trans.totalAmount)
+                              : "-"}
                           </TableCell>
                           <TableCell>
                             {trans.paymentMethod && (
                               <Badge variant="outline">
-                                {trans.paymentMethod === 'cash' ? 'Tunai' : 'QRIS'}
+                                {trans.paymentMethod === "cash"
+                                  ? "Tunai"
+                                  : "QRIS"}
                               </Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {trans.notes || '-'}
+                            {trans.notes || "-"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -400,24 +436,30 @@ export default function HistoryDetailPage() {
                     <TableBody>
                       {dayDetail.stockMovements.map((stock, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-medium">{stock.product}</TableCell>
-                          <TableCell className="text-center">{stock.opening}</TableCell>
+                          <TableCell className="font-medium">
+                            {stock.product}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {stock.opening}
+                          </TableCell>
                           <TableCell className="text-center text-green-600">
-                            {stock.purchased > 0 ? `+${stock.purchased}` : '-'}
+                            {stock.purchased > 0 ? `+${stock.purchased}` : "-"}
                           </TableCell>
                           <TableCell className="text-center text-red-600">
-                            {stock.sold > 0 ? `-${stock.sold}` : '-'}
+                            {stock.sold > 0 ? `-${stock.sold}` : "-"}
                           </TableCell>
                           <TableCell className="text-center text-orange-600">
-                            {stock.damaged > 0 ? `-${stock.damaged}` : '-'}
+                            {stock.damaged > 0 ? `-${stock.damaged}` : "-"}
                           </TableCell>
                           <TableCell className="text-center text-blue-600">
-                            {stock.bonus > 0 ? `-${stock.bonus}` : '-'}
+                            {stock.bonus > 0 ? `-${stock.bonus}` : "-"}
                           </TableCell>
                           <TableCell className="text-center text-gray-600">
-                            {stock.disposal > 0 ? `-${stock.disposal}` : '-'}
+                            {stock.disposal > 0 ? `-${stock.disposal}` : "-"}
                           </TableCell>
-                          <TableCell className="text-center font-medium">{stock.closing}</TableCell>
+                          <TableCell className="text-center font-medium">
+                            {stock.closing}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -436,15 +478,26 @@ export default function HistoryDetailPage() {
               <CardContent>
                 <div className="space-y-4">
                   {dayDetail.summary.topProducts.map((product, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div>
                         <h4 className="font-medium">{product.name}</h4>
-                        <p className="text-sm text-muted-foreground">{product.quantity} pcs terjual</p>
+                        <p className="text-sm text-muted-foreground">
+                          {product.quantity} pcs terjual
+                        </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-green-600">{formatCurrency(product.revenue)}</p>
+                        <p className="font-medium text-green-600">
+                          {formatCurrency(product.revenue)}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {((product.revenue / dayDetail.summary.totalSales) * 100).toFixed(1)}% dari total
+                          {(
+                            (product.revenue / dayDetail.summary.totalSales) *
+                            100
+                          ).toFixed(1)}
+                          % dari total
                         </p>
                       </div>
                     </div>
