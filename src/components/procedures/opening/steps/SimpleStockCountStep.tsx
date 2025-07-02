@@ -43,7 +43,16 @@ export function SimpleStockCountStep({
 
   useEffect(() => {
     if (data.stockItems && data.stockItems.length > 0) {
-      // Convert existing data to simple format
+      // Load existing data but still fetch current stock
+      loadExistingDataWithCurrentStock();
+    } else {
+      fetchProducts();
+    }
+  }, []);
+
+  const loadExistingDataWithCurrentStock = async () => {
+    try {
+      // Convert existing data to simple format first
       const simpleProductItems = data.stockItems
         .filter((item: any) => item.type === "product")
         .map((item: any) => ({
@@ -51,7 +60,75 @@ export function SimpleStockCountStep({
           name: item.name,
           variant: item.variant || "",
           totalCount: (item.frozenCount || 0) + (item.readyCount || 0),
-          currentStock: 0, // Will be fetched if needed
+          currentStock: 0, // Will be updated with actual current stock
+        }));
+
+      const simpleOtherItems = data.stockItems
+        .filter((item: any) => item.type !== "product")
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          unit: item.unit,
+          count: item.currentCount || 0,
+          currentStock: 0, // Will be updated with actual current stock
+        }));
+
+      // Fetch current stock data
+      const stocksResponse = await fetch("/api/stocks", {
+        credentials: "include",
+      });
+
+      if (stocksResponse.ok) {
+        const stocks = await stocksResponse.json();
+
+        // Create maps for current stock lookup
+        const productStocksMap = new Map();
+        const otherStocksMap = new Map();
+
+        stocks.forEach((stock: any) => {
+          if (stock.type === "product") {
+            productStocksMap.set(stock.name, stock.currentStock || 0);
+          } else {
+            otherStocksMap.set(stock.name, stock.currentStock || 0);
+          }
+        });
+
+        // Update product items with current stock
+        const updatedProductItems = simpleProductItems.map(
+          (item: StockItem) => {
+            const stockKey = `${item.name} - ${item.variant}`;
+            return {
+              ...item,
+              currentStock: productStocksMap.get(stockKey) || 0,
+            };
+          }
+        );
+
+        // Update other items with current stock
+        const updatedOtherItems = simpleOtherItems.map((item: OtherItem) => ({
+          ...item,
+          currentStock: otherStocksMap.get(item.name) || 0,
+        }));
+
+        setStockItems(updatedProductItems);
+        setOtherItems(updatedOtherItems);
+      } else {
+        // If stocks API fails, use the data without current stock
+        setStockItems(simpleProductItems);
+        setOtherItems(simpleOtherItems);
+      }
+    } catch (error) {
+      console.error("Error loading existing data with current stock:", error);
+      // Fallback to loading without current stock
+      const simpleProductItems = data.stockItems
+        .filter((item: any) => item.type === "product")
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          variant: item.variant || "",
+          totalCount: (item.frozenCount || 0) + (item.readyCount || 0),
+          currentStock: 0,
         }));
 
       const simpleOtherItems = data.stockItems
@@ -67,11 +144,10 @@ export function SimpleStockCountStep({
 
       setStockItems(simpleProductItems);
       setOtherItems(simpleOtherItems);
+    } finally {
       setLoading(false);
-    } else {
-      fetchProducts();
     }
-  }, []);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -503,18 +579,21 @@ export function SimpleStockCountStep({
                         {"totalCount" in item
                           ? item.currentStock
                           : item.currentStock}{" "}
-                        {item.unit} | Terhitung:{" "}
+                        {item.type === "product" ? "pcs" : item.unit} |
+                        Terhitung:{" "}
                         {"totalCount" in item ? item.totalCount : item.count}{" "}
-                        {item.unit} |
+                        {item.type === "product" ? "pcs" : item.unit} |
                         {isExcess ? (
                           <span className="text-blue-600 font-medium">
                             {" "}
-                            Kelebihan: {Math.abs(item.discrepancy)} {item.unit}
+                            Kelebihan: {Math.abs(item.discrepancy)}{" "}
+                            {item.type === "product" ? "pcs" : item.unit}
                           </span>
                         ) : (
                           <span className="text-red-600 font-medium">
                             {" "}
-                            Hilang: {Math.abs(item.discrepancy)} {item.unit}
+                            Hilang: {Math.abs(item.discrepancy)}{" "}
+                            {item.type === "product" ? "pcs" : item.unit}
                           </span>
                         )}
                       </p>

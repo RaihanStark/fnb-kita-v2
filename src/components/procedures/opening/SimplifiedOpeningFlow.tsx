@@ -52,6 +52,34 @@ export function SimplifiedOpeningFlow() {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
+  // Helper function to convert API step data format to component format
+  const mapStepDataFromAPI = (apiStepData: any): Record<number, any> => {
+    const mappedData: Record<number, any> = {};
+    if (!apiStepData) return mappedData;
+
+    // Map step2, step4 to 2, 4
+    STEPS.forEach((step) => {
+      const apiKey = `step${step.id}`;
+      if (apiStepData[apiKey]) {
+        mappedData[step.id] = apiStepData[apiKey];
+      }
+    });
+
+    return mappedData;
+  };
+
+  // Helper function to convert component step data format to API format
+  const mapStepDataToAPI = (componentStepData: Record<number, any>): any => {
+    const apiData: any = {};
+
+    Object.entries(componentStepData).forEach(([stepId, data]) => {
+      const apiKey = `step${stepId}`;
+      apiData[apiKey] = data;
+    });
+
+    return apiData;
+  };
+
   // Check for existing opening or start new one
   useEffect(() => {
     if (!isInitialized) {
@@ -72,12 +100,22 @@ export function SimplifiedOpeningFlow() {
         if (checkResult.opening.completed) {
           // Opening already completed today
           setAlreadyCompletedToday(true);
-          setStepData(checkResult.opening.stepData || {});
+          const mappedData = mapStepDataFromAPI(checkResult.opening.stepData);
+          console.log("Loading completed opening data:", {
+            original: checkResult.opening.stepData,
+            mapped: mappedData,
+          });
+          setStepData(mappedData);
           setOpeningId(checkResult.opening.id);
         } else {
           // Continue existing opening
           setOpeningId(checkResult.opening.id);
-          setStepData(checkResult.opening.stepData || {});
+          const mappedData = mapStepDataFromAPI(checkResult.opening.stepData);
+          console.log("Loading existing opening data:", {
+            original: checkResult.opening.stepData,
+            mapped: mappedData,
+          });
+          setStepData(mappedData);
 
           // Determine which steps are completed
           const completed = new Set<number>();
@@ -146,7 +184,7 @@ export function SimplifiedOpeningFlow() {
       const newStepData = { ...stepData, [stepId]: data };
       setStepData(newStepData);
 
-      // Save to API
+      // Save to API - the API expects the raw data, not the mapped format
       const updateResult = await openingProcedureService.updateStep(
         openingId,
         stepId,
@@ -162,6 +200,34 @@ export function SimplifiedOpeningFlow() {
         // Clear selected step
         setSelectedStep(null);
       } else {
+        setError("Failed to save progress. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error saving step:", err);
+      setError("Failed to save progress. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStepUpdate = async (stepId: number, data: any) => {
+    if (!openingId) return;
+
+    try {
+      setSaving(true);
+
+      // Update step data locally first
+      const newStepData = { ...stepData, [stepId]: data };
+      setStepData(newStepData);
+
+      // Save to API without marking as completed
+      const updateResult = await openingProcedureService.saveProgress(
+        openingId,
+        stepId,
+        data
+      );
+
+      if (!updateResult.success) {
         setError("Failed to save progress. Please try again.");
       }
     } catch (err) {
@@ -430,6 +496,15 @@ export function SimplifiedOpeningFlow() {
                     <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                   </div>
                 )}
+                {(() => {
+                  console.log(
+                    "Step data for",
+                    selectedStep,
+                    ":",
+                    stepData[selectedStep] || {}
+                  );
+                  return null;
+                })()}
                 <CurrentStepComponent
                   data={stepData[selectedStep] || {}}
                   onNext={(data: any) => handleStepComplete(selectedStep, data)}
