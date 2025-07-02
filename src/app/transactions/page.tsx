@@ -12,6 +12,7 @@ import { formatDateUTC7, formatTimeWIB } from '@/lib/utils/format-date'
 import { formatCurrency } from '@/lib/utils/format'
 import { TransactionService } from '@/lib/services/transaction.service'
 import { openingProcedureService } from '@/lib/services/opening-procedure'
+import { closingProcedureService } from '@/lib/services/closing-procedure'
 import { useToast } from '@/hooks/use-toast'
 
 const typeConfig = {
@@ -29,6 +30,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true)
   const [hasOpeningToday, setHasOpeningToday] = useState(false)
   const [checkingOpening, setCheckingOpening] = useState(true)
+  const [hasClosingToday, setHasClosingToday] = useState(false)
+  const [isClosingInProgress, setIsClosingInProgress] = useState(false)
 
   useEffect(() => {
     checkOpeningAndFetchTransactions()
@@ -40,7 +43,12 @@ export default function TransactionsPage() {
       const openingResult = await openingProcedureService.checkTodayOpening()
       setHasOpeningToday(openingResult.hasOpening && openingResult.opening?.completed)
       
-      // Only fetch transactions if opening is completed
+      // Check closing status
+      const closingResult = await closingProcedureService.checkTodayClosing()
+      setHasClosingToday(closingResult.hasClosing && closingResult.closing?.completed)
+      setIsClosingInProgress(closingResult.hasClosing && !closingResult.closing?.completed)
+      
+      // Always fetch transactions to show history
       if (openingResult.hasOpening && openingResult.opening?.completed) {
         const data = await TransactionService.getTransactions()
         setTransactions(data)
@@ -122,12 +130,32 @@ export default function TransactionsPage() {
           </div>
           <Button 
             onClick={() => router.push('/transactions/new')}
-            className="bg-orange-500 hover:bg-orange-600"
+            className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            disabled={!hasOpeningToday || isClosingInProgress || hasClosingToday}
           >
             <Plus className="w-4 h-4 mr-2" />
             Tambah
           </Button>
         </div>
+
+        {/* Show alerts for closing status */}
+        {isClosingInProgress && (
+          <Alert className="border-orange-200 bg-orange-50 mb-4">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              Penutupan toko sedang berlangsung. Transaksi baru tidak dapat dilakukan.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {hasClosingToday && (
+          <Alert className="border-red-200 bg-red-50 mb-4">
+            <Lock className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              Toko sudah ditutup untuk hari ini. Transaksi baru dapat dilakukan setelah pembukaan esok hari.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -184,8 +212,16 @@ export default function TransactionsPage() {
               return (
                 <Card 
                   key={transaction.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => router.push(`/transactions/${transaction.id}/edit`)}
+                  className={`transition-shadow ${
+                    isClosingInProgress || hasClosingToday 
+                      ? 'opacity-75' 
+                      : 'cursor-pointer hover:shadow-md'
+                  }`}
+                  onClick={() => {
+                    if (!isClosingInProgress && !hasClosingToday) {
+                      router.push(`/transactions/${transaction.id}/edit`)
+                    }
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">

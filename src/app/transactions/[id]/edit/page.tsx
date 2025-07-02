@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { formatCurrency } from '@/lib/utils/format'
 import { useToast } from '@/hooks/use-toast'
 import { openingProcedureService } from '@/lib/services/opening-procedure'
+import { closingProcedureService } from '@/lib/services/closing-procedure'
 
 interface TransactionItem {
   productId: string
@@ -57,6 +58,8 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
   const [loadingPackaging, setLoadingPackaging] = useState(true)
   const [hasOpeningToday, setHasOpeningToday] = useState(false)
   const [checkingOpening, setCheckingOpening] = useState(true)
+  const [hasClosingToday, setHasClosingToday] = useState(false)
+  const [isClosingInProgress, setIsClosingInProgress] = useState(false)
 
   useEffect(() => {
     params.then(p => {
@@ -73,7 +76,12 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
         openingResult.hasOpening && openingResult.opening?.completed
       )
 
-      // Fetch transaction and products regardless of opening status to show existing data
+      // Check closing status
+      const closingResult = await closingProcedureService.checkTodayClosing()
+      setHasClosingToday(closingResult.hasClosing && closingResult.closing?.completed)
+      setIsClosingInProgress(closingResult.hasClosing && !closingResult.closing?.completed)
+
+      // Fetch transaction and products regardless of opening/closing status to show existing data
       await Promise.all([
         fetchTransaction(id),
         fetchProducts(),
@@ -412,6 +420,52 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
               >
                 Ke Pembukaan →
               </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // Show alert if closing is in progress
+  if (isClosingInProgress) {
+    return (
+      <AppLayout title="Edit Transaksi" showBackButton>
+        <div className="p-4">
+          <Alert className="border-orange-200 bg-orange-50">
+            <Lock className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Transaksi tidak dapat diedit.</strong>
+              <br />
+              Penutupan toko sedang berlangsung. Harap tunggu hingga proses
+              penutupan selesai.
+              <br />
+              <Button
+                variant="link"
+                className="p-0 h-auto mt-2 text-orange-700 hover:text-orange-800"
+                onClick={() => router.push("/procedures/closing")}
+              >
+                Lihat Status Penutupan →
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // Show alert if closing is completed
+  if (hasClosingToday) {
+    return (
+      <AppLayout title="Edit Transaksi" showBackButton>
+        <div className="p-4">
+          <Alert className="border-red-200 bg-red-50">
+            <Lock className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <strong>Transaksi tidak dapat diedit.</strong>
+              <br />
+              Toko sudah ditutup untuk hari ini. Transaksi hanya dapat diedit
+              setelah pembukaan toko esok hari.
             </AlertDescription>
           </Alert>
         </div>
