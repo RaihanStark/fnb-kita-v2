@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -361,6 +361,41 @@ export function SimplifiedClosingFlow() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 pb-32 md:px-6 md:pb-8">
+      {/* Alert for ongoing closing procedure */}
+      <Alert className="border-orange-200 bg-orange-50 mb-6 mt-4">
+        <AlertCircle className="h-4 w-4 text-orange-600" />
+        <AlertDescription className="text-orange-800">
+          <strong>Prosedur Penutupan Sedang Berlangsung</strong>
+          <br />
+          Selesaikan semua langkah untuk menyelesaikan penutupan toko hari ini.
+          <br />
+          <Button
+            variant="link"
+            className="p-0 h-auto mt-2 text-orange-700 hover:text-orange-800"
+            onClick={async () => {
+              if (confirm("Yakin ingin membatalkan prosedur penutupan?")) {
+                try {
+                  setSaving(true);
+                  const result = await closingProcedureService.cancelTodayClosing();
+                  if (result.success) {
+                    router.push("/dashboard");
+                  } else {
+                    setError(result.error || "Gagal membatalkan penutupan");
+                  }
+                } catch (err) {
+                  console.error("Error cancelling closing:", err);
+                  setError("Gagal membatalkan penutupan. Silakan coba lagi.");
+                } finally {
+                  setSaving(false);
+                }
+              }
+            }}
+          >
+            Batalkan Penutupan
+          </Button>
+        </AlertDescription>
+      </Alert>
+
       {/* Progress Summary */}
       <div className="mb-8 mt-6">
         <div className="flex items-center justify-between mb-3">
@@ -476,5 +511,3 @@ export function SimplifiedClosingFlow() {
     </div>
   );
 }
-
-import React from "react";
