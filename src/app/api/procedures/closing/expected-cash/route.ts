@@ -39,26 +39,47 @@ export async function GET(req: NextRequest) {
       openingCash = stepData?.step4?.totalCash || 0;
     }
 
-    // Get today's total sales
-    const salesResult = await db
+    // Get today's total CASH sales only (not QRIS)
+    const cashSalesResult = await db
       .select({
-        totalSales: sql<number>`COALESCE(SUM(${transactions.totalAmount}), 0)`
+        totalCashSales: sql<number>`COALESCE(SUM(${transactions.totalAmount}), 0)`
       })
       .from(transactions)
       .where(
         and(
           gte(transactions.createdAt, startOfDay),
-          lt(transactions.createdAt, endOfDay)
+          lt(transactions.createdAt, endOfDay),
+          eq(transactions.type, 'sales'),
+          eq(transactions.paymentMethod, 'cash')
         )
       );
 
-    const totalSales = Number(salesResult[0]?.totalSales || 0);
-    const expectedCash = openingCash + totalSales;
+    // Get today's total QRIS sales for information
+    const qrisSalesResult = await db
+      .select({
+        totalQrisSales: sql<number>`COALESCE(SUM(${transactions.totalAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          gte(transactions.createdAt, startOfDay),
+          lt(transactions.createdAt, endOfDay),
+          eq(transactions.type, 'sales'),
+          eq(transactions.paymentMethod, 'qris')
+        )
+      );
+
+    const totalCashSales = Number(cashSalesResult[0]?.totalCashSales || 0);
+    const totalQrisSales = Number(qrisSalesResult[0]?.totalQrisSales || 0);
+    const totalSales = totalCashSales + totalQrisSales;
+    const expectedCash = openingCash + totalCashSales; // Only cash sales added to expected cash
 
     return NextResponse.json({
       success: true,
       openingCash,
       totalSales,
+      totalCashSales,
+      totalQrisSales,
       expectedCash
     });
 

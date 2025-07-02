@@ -44,6 +44,8 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
   const [expectedCash, setExpectedCash] = useState<number | null>(null);
   const [openingCash, setOpeningCash] = useState<number | null>(null);
   const [totalSales, setTotalSales] = useState<number | null>(null);
+  const [totalCashSales, setTotalCashSales] = useState<number | null>(null);
+  const [totalQrisSales, setTotalQrisSales] = useState<number | null>(null);
   const [discrepancyNote, setDiscrepancyNote] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -63,6 +65,8 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
         if (data.openingCash !== null) {
           setOpeningCash(data.openingCash);
           setTotalSales(data.totalSales || 0);
+          setTotalCashSales(data.totalCashSales || 0);
+          setTotalQrisSales(data.totalQrisSales || 0);
           setExpectedCash(data.expectedCash);
         }
       }
@@ -106,6 +110,8 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
       expectedCash,
       openingCash,
       totalSales,
+      totalCashSales,
+      totalQrisSales,
       discrepancy: expectedCash !== null ? currentTotal - expectedCash : 0,
       discrepancyNote: discrepancyNote || null,
       completedAt: new Date().toISOString(),
@@ -180,8 +186,20 @@ export function CashCountStep({ data, onNext }: CashCountStepProps) {
                   <span className="font-medium">{formatCurrency(openingCash)}</span>
                 </div>
               )}
-              {totalSales !== null && (
+              {totalCashSales !== null && (
                 <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Penjualan Tunai:</span>
+                  <span className="font-medium">{formatCurrency(totalCashSales)}</span>
+                </div>
+              )}
+              {totalQrisSales !== null && totalQrisSales > 0 && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span className="text-muted-foreground">Penjualan QRIS:</span>
+                  <span className="font-medium">{formatCurrency(totalQrisSales)}</span>
+                </div>
+              )}
+              {totalSales !== null && (
+                <div className="flex justify-between text-sm pt-1">
                   <span className="text-muted-foreground">Total Penjualan:</span>
                   <span className="font-medium">{formatCurrency(totalSales)}</span>
                 </div>
