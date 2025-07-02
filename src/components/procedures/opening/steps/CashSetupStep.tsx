@@ -36,6 +36,9 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
       { value: 5000, count: 0, label: "Rp 5.000" },
       { value: 2000, count: 0, label: "Rp 2.000" },
       { value: 1000, count: 0, label: "Rp 1.000" },
+      { value: 500, count: 0, label: "Rp 500" },
+      { value: 200, count: 0, label: "Rp 200" },
+      { value: 100, count: 0, label: "Rp 100" },
     ]
   );
 
@@ -52,7 +55,6 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
     );
   };
 
-
   const handleSubmit = () => {
     onNext({
       denominations,
@@ -63,16 +65,6 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Banknote className="h-5 w-5" />
-          Modal Awal
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Catat uang kembalian yang disiapkan
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Pecahan Uang</CardTitle>
@@ -88,9 +80,7 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
                 <NumberInput
                   min={0}
                   value={denom.count}
-                  onChange={(value) =>
-                    updateDenomination(index, value || 0)
-                  }
+                  onChange={(value) => updateDenomination(index, value || 0)}
                   className="w-24"
                   placeholder="0"
                   allowDecimals={false}
@@ -136,7 +126,7 @@ export function CashSetupStep({ data, onNext }: CashSetupStepProps) {
 
       <div className="flex justify-end">
         <Button onClick={handleSubmit} className="w-full md:w-auto">
-          Lanjut ke Checklist Akhir
+          Simpan
         </Button>
       </div>
     </div>

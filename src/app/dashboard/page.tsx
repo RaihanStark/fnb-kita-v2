@@ -26,6 +26,7 @@ import {
   TrendingUp,
   DollarSign,
   BarChart3,
+  History,
 } from "lucide-react";
 import { openingProcedureService, closingProcedureService } from "@/lib/services";
 import { formatCurrency } from "@/lib/utils/format";
@@ -172,6 +173,12 @@ export default function DashboardPage() {
       color: "bg-indigo-100 text-indigo-600",
       href: "/reports",
     },
+    {
+      icon: History,
+      label: "Riwayat",
+      color: "bg-gray-100 text-gray-600",
+      href: "/history",
+    },
   ];
 
   const employeeFeatures = [
@@ -210,6 +217,12 @@ export default function DashboardPage() {
       label: "Laporan",
       color: "bg-indigo-100 text-indigo-600",
       href: "/reports",
+    },
+    {
+      icon: History,
+      label: "Riwayat",
+      color: "bg-gray-100 text-gray-600",
+      href: "/history",
     },
     {
       icon: Clock,

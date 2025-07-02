@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatCurrency } from "@/lib/utils/format";
 import { useToast } from "@/hooks/use-toast";
 import { openingProcedureService } from "@/lib/services/opening-procedure";
+import { closingProcedureService } from "@/lib/services/closing-procedure";
 
 interface TransactionItem {
   productId: string;
@@ -51,6 +52,7 @@ export default function NewTransactionPage() {
   const [items, setItems] = useState<TransactionItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "qris">("cash");
   const [products, setProducts] = useState<Product[]>([]);
   const [productStocks, setProductStocks] = useState<Stock[]>([]);
   const [packagingStocks, setPackagingStocks] = useState<Stock[]>([]);
@@ -58,6 +60,8 @@ export default function NewTransactionPage() {
   const [loadingPackaging, setLoadingPackaging] = useState(true);
   const [hasOpeningToday, setHasOpeningToday] = useState(false);
   const [checkingOpening, setCheckingOpening] = useState(true);
+  const [hasClosingToday, setHasClosingToday] = useState(false);
+  const [isClosingInProgress, setIsClosingInProgress] = useState(false);
 
   useEffect(() => {
     checkOpeningAndFetchProducts();
@@ -71,8 +75,14 @@ export default function NewTransactionPage() {
         openingResult.hasOpening && openingResult.opening?.completed
       );
 
-      // Only fetch products and packaging if opening is completed
-      if (openingResult.hasOpening && openingResult.opening?.completed) {
+      // Check closing status
+      const closingResult = await closingProcedureService.checkTodayClosing();
+      setHasClosingToday(closingResult.hasClosing && closingResult.closing?.completed);
+      setIsClosingInProgress(closingResult.hasClosing && !closingResult.closing?.completed);
+
+      // Only fetch products and packaging if opening is completed and closing hasn't started
+      if (openingResult.hasOpening && openingResult.opening?.completed && 
+          !closingResult.hasClosing) {
         await Promise.all([fetchProducts(), fetchStocks()]);
       }
     } catch (error) {
@@ -140,6 +150,19 @@ export default function NewTransactionPage() {
     );
 
     if (existingItem) {
+      // Check if we can add more
+      const stock = getProductStock(product);
+      const maxStock = stock ? parseFloat(stock.currentStock) : 0;
+      
+      if (existingItem.quantity >= maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${product.name} ${product.variant} hanya tersedia ${maxStock} pcs`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       updateQuantity(items.indexOf(existingItem), 1);
     } else {
       setItems([
@@ -161,6 +184,18 @@ export default function NewTransactionPage() {
     );
 
     if (existingItem) {
+      // Check if we can add more
+      const maxStock = parseFloat(packaging.currentStock);
+      
+      if (existingItem.quantity >= maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${packaging.name} hanya tersedia ${maxStock} ${packaging.unit}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
       updateQuantity(items.indexOf(existingItem), 1);
     } else {
       setItems([
@@ -179,7 +214,45 @@ export default function NewTransactionPage() {
 
   const updateQuantity = (index: number, change: number) => {
     const newItems = [...items];
-    newItems[index].quantity = Math.max(0, newItems[index].quantity + change);
+    const item = newItems[index];
+    const newQuantity = item.quantity + change;
+
+    // Check stock limit for products (not packaging)
+    if (!item.isPackaging && change > 0) {
+      const stock = getProductStock({ 
+        id: item.productId, 
+        name: item.name, 
+        variant: item.variant 
+      } as Product);
+      
+      const maxStock = stock ? parseFloat(stock.currentStock) : 0;
+      
+      if (newQuantity > maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${item.name} ${item.variant} hanya tersedia ${maxStock} pcs`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // For packaging items, check stock limit
+    if (item.isPackaging && change > 0) {
+      const packagingStock = packagingStocks.find(p => p.id === item.productId);
+      const maxStock = packagingStock ? parseFloat(packagingStock.currentStock) : 0;
+      
+      if (newQuantity > maxStock) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: `Stok ${item.name} hanya tersedia ${maxStock} ${item.unit}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    newItems[index].quantity = Math.max(0, newQuantity);
 
     if (newItems[index].quantity === 0) {
       newItems.splice(index, 1);
@@ -188,11 +261,6 @@ export default function NewTransactionPage() {
     setItems(newItems);
   };
 
-  const updatePrice = (index: number, price: number) => {
-    const newItems = [...items];
-    newItems[index].price = price;
-    setItems(newItems);
-  };
 
   const removeItem = (index: number) => {
     const newItems = [...items];
@@ -238,6 +306,7 @@ export default function NewTransactionPage() {
           type,
           items,
           totalAmount: type === "sales" ? getTotalAmount() : null,
+          paymentMethod: type === "sales" ? paymentMethod : null,
           notes,
         }),
       });
@@ -313,6 +382,52 @@ export default function NewTransactionPage() {
     );
   }
 
+  // Show alert if closing is in progress
+  if (isClosingInProgress) {
+    return (
+      <AppLayout title="Tambah Transaksi" showBackButton>
+        <div className="p-4">
+          <Alert className="border-orange-200 bg-orange-50">
+            <Lock className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Transaksi tidak dapat dilakukan.</strong>
+              <br />
+              Penutupan toko sedang berlangsung. Harap tunggu hingga proses
+              penutupan selesai.
+              <br />
+              <Button
+                variant="link"
+                className="p-0 h-auto mt-2 text-orange-700 hover:text-orange-800"
+                onClick={() => router.push("/procedures/closing")}
+              >
+                Lihat Status Penutupan →
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Show alert if closing is completed
+  if (hasClosingToday) {
+    return (
+      <AppLayout title="Tambah Transaksi" showBackButton>
+        <div className="p-4">
+          <Alert className="border-red-200 bg-red-50">
+            <Lock className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <strong>Transaksi tidak dapat dilakukan.</strong>
+              <br />
+              Toko sudah ditutup untuk hari ini. Transaksi baru dapat dilakukan
+              setelah pembukaan toko esok hari.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title="Tambah Transaksi" showBackButton>
       <div className="p-4 pb-24">
@@ -348,6 +463,32 @@ export default function NewTransactionPage() {
           </CardContent>
         </Card>
 
+        {/* Payment Method - Only show for sales */}
+        {type === "sales" && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Metode Pembayaran</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as "cash" | "qris")}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <Label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="cash" />
+                    <span>Tunai</span>
+                  </Label>
+                  <Label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="qris" />
+                    <span>QRIS</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Product Selection */}
         <Card className="mb-6">
           <CardHeader>
@@ -372,14 +513,22 @@ export default function NewTransactionPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(product)}
-                    className="justify-start flex-col items-start h-auto py-2"
-                    disabled={getProductStock(product)?.currentStock === "0"}
+                    className={`justify-start flex-col items-start h-auto py-2 ${
+                      !getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={!getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0}
                   >
                     <div className="flex items-center">
                       <Plus className="w-4 h-4 mr-1" />
                       {product.name} {product.variant}
                     </div>
-                    <span className="text-xs text-gray-500">
+                    <span className={`text-xs ${
+                      !getProductStock(product) || parseFloat(getProductStock(product)?.currentStock || "0") <= 0
+                        ? "text-red-500"
+                        : "text-gray-500"
+                    }`}>
                       Stok: {getProductStock(product)?.currentStock || "0"} pcs
                     </span>
                   </Button>
@@ -439,77 +588,84 @@ export default function NewTransactionPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {items.map((item, index) => (
-                  <div key={index} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <span className="font-medium">
-                          {item.name} {item.variant}
-                        </span>
-                        {item.isPackaging && (
-                          <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                            Kemasan
+                {items.map((item, index) => {
+                  // Get max stock for this item
+                  let maxStock = Infinity;
+                  if (!item.isPackaging) {
+                    const stock = getProductStock({ 
+                      id: item.productId, 
+                      name: item.name, 
+                      variant: item.variant 
+                    } as Product);
+                    maxStock = stock ? parseFloat(stock.currentStock) : 0;
+                  } else {
+                    const packagingStock = packagingStocks.find(p => p.id === item.productId);
+                    maxStock = packagingStock ? parseFloat(packagingStock.currentStock) : 0;
+                  }
+                  
+                  const isAtMaxStock = item.quantity >= maxStock;
+                  
+                  return (
+                    <div key={index} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="font-medium">
+                            {item.name} {item.variant}
                           </span>
-                        )}
+                          {item.isPackaging && (
+                            <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                              Kemasan
+                            </span>
+                          )}
+                          <span className="ml-2 text-xs text-gray-500">
+                            (Maks: {maxStock} {item.unit || 'pcs'})
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeItem(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => removeItem(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(index, -1)}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <span className="w-12 text-center font-medium">
+                            {item.quantity}{" "}
+                            {item.unit && item.unit !== "pcs" ? item.unit : ""}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={`h-8 w-8 ${isAtMaxStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={() => updateQuantity(index, 1)}
+                            disabled={isAtMaxStock}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(index, -1)}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-12 text-center font-medium">
-                          {item.quantity}{" "}
-                          {item.unit && item.unit !== "pcs" ? item.unit : ""}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(index, 1)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      {type === "sales" && !item.isPackaging && (
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-sm text-gray-600">@</span>
-                          <NumberInput
-                            value={item.price}
-                            onChange={(value) =>
-                              updatePrice(index, value || 0)
-                            }
-                            className="h-8"
-                            placeholder="Harga"
-                            min={0}
-                            allowDecimals={true}
-                          />
+                      {type === "sales" && item.price && !item.isPackaging && (
+                        <div className="text-sm text-gray-600 mt-2">
+                          <div>@ {formatCurrency(item.price)} × {item.quantity} = {formatCurrency(item.price * item.quantity)}</div>
                         </div>
                       )}
                     </div>
-
-                    {type === "sales" && item.price && !item.isPackaging && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Subtotal: {formatCurrency(item.price * item.quantity)}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {type === "sales" && (

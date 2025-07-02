@@ -59,5 +59,10 @@ export const closingProcedureService = {
     stepData: any
   ): Promise<UpdateClosingResponse> {
     return this.updateStep(closingId, stepNumber, stepData, false);
+  },
+
+  // Cancel today's closing procedure
+  async cancelTodayClosing(): Promise<{ success: boolean; message?: string; error?: string }> {
+    return await api.delete('/api/procedures/closing/delete-today');
   }
 };
