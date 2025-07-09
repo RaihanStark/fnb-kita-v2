@@ -128,14 +128,20 @@ export async function GET(request: NextRequest) {
       const dailySales = salesTransactions.reduce((sum, t) => sum + (Number(t.totalAmount) || 0), 0)
       const dailyTransactionCount = salesTransactions.length
       
-      // Calculate items sold
+      // Calculate items sold and risol sales
       let itemsSold = 0
       let itemsDamaged = 0
+      let risolSold = 0
       
       salesTransactions.forEach(trans => {
         if (trans.items && Array.isArray(trans.items)) {
           trans.items.forEach((item: any) => {
             itemsSold += item.quantity || 0
+            // Count risol sales (excluding kresek and similar items)
+            if (item.name && item.name.toLowerCase().includes('risol') && 
+                !item.name.toLowerCase().includes('kresek')) {
+              risolSold += item.quantity || 0
+            }
           })
         }
       })
@@ -202,6 +208,7 @@ export async function GET(request: NextRequest) {
         sales: dailySales,
         transactions: dailyTransactionCount,
         items: itemsSold,
+        risolSold, // Add risol sales count
         // Cash data
         openingCash,
         closingCash,

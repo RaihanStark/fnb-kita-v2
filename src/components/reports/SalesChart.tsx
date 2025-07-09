@@ -58,6 +58,7 @@ export function SalesChart({ period }: SalesChartProps) {
           date: day.displayDate,
           sales: day.sales, 
           movingAverage: calculateMovingAverage(result.dailyData, index),
+          risolSold: day.risolSold || 0,
           transactions: day.transactions,
           items: day.items,
         }));
@@ -95,6 +96,7 @@ export function SalesChart({ period }: SalesChartProps) {
           </p>
           <p className="text-blue-600">Transaksi: {data.transactions} kali</p>
           <p className="text-purple-600">Item: {data.items} pcs</p>
+          <p className="text-blue-600">Risol: {data.risolSold} pcs</p>
         </div>
       );
     }
@@ -128,12 +130,20 @@ export function SalesChart({ period }: SalesChartProps) {
             height={60}
           />
           <YAxis
+            yAxisId="left"
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => `${value / 1000}k`}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tick={{ fontSize: 12 }}
+            label={{ value: "Risol (pcs)", angle: 90, position: "insideRight" }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Line
+            yAxisId="left"
             type="monotone"
             dataKey="sales"
             stroke="#16a34a"
@@ -143,6 +153,7 @@ export function SalesChart({ period }: SalesChartProps) {
             name="Penjualan (Rp)"
           />
           <Line
+            yAxisId="left"
             type="monotone"
             dataKey="movingAverage"
             stroke="#f97316"
@@ -150,6 +161,17 @@ export function SalesChart({ period }: SalesChartProps) {
             dot={{ fill: "#f97316", r: 3 }}
             activeDot={{ r: 5 }}
             name="Rata-rata Bergerak 7 Hari (Rp)"
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="risolSold"
+            stroke="#3b82f6"
+            strokeWidth={2.5}
+            strokeDasharray="3 3"
+            dot={{ fill: "#3b82f6", r: 3 }}
+            activeDot={{ r: 5 }}
+            name="Penjualan Risol (pcs)"
           />
         </LineChart>
       </ResponsiveContainer>
