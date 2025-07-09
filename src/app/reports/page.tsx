@@ -12,7 +12,8 @@ import {
   Calendar,
   Download,
   RefreshCw,
-  PieChart
+  PieChart,
+  AlertTriangle
 } from "lucide-react";
 import { SalesChart } from "@/components/reports/SalesChart";
 import { CashChart } from "@/components/reports/CashChart";
@@ -29,6 +30,7 @@ export default function ReportsPage() {
     averageDailySales: 0,
     currentCash: 0,
     totalStock: 0,
+    averageRisolWasteRate: 0,
   });
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function ReportsPage() {
           averageDailySales: Math.round(result.summary.averageDailySales),
           currentCash: result.summary.currentCash,
           totalStock: result.summary.totalStock,
+          averageRisolWasteRate: result.summary.averageRisolWasteRate || 0,
         });
       } else {
         throw new Error(result.error || 'Failed to fetch summary data');
@@ -68,6 +71,7 @@ export default function ReportsPage() {
         averageDailySales: 0,
         currentCash: 0,
         totalStock: 0,
+        averageRisolWasteRate: 0,
       });
     } finally {
       setLoading(false);
@@ -128,7 +132,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -157,40 +161,18 @@ export default function ReportsPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Rata-rata Harian
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Tingkat Reject Risol
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {loading ? "..." : formatCurrency(summaryData.averageDailySales)}
+              <div className="text-2xl font-bold text-red-600">
+                {loading ? "..." : `${summaryData.averageRisolWasteRate.toFixed(1)}%`}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Kas Saat Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {loading ? "..." : formatCurrency(summaryData.currentCash)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Stok
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {loading ? "..." : `${summaryData.totalStock} pcs`}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Rata-rata {selectedPeriod === "last30Days" ? "30 hari" : selectedPeriod === "last60Days" ? "60 hari" : "90 hari"}
+              </p>
             </CardContent>
           </Card>
         </div>

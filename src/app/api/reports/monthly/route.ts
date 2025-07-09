@@ -146,10 +146,17 @@ export async function GET(request: NextRequest) {
         }
       })
       
+      let risolDamaged = 0
+      
       damagedTransactions.forEach(trans => {
         if (trans.items && Array.isArray(trans.items)) {
           trans.items.forEach((item: any) => {
             itemsDamaged += item.quantity || 0
+            // Count damaged risol (excluding kresek and similar items)
+            if (item.name && item.name.toLowerCase().includes('risol') && 
+                !item.name.toLowerCase().includes('kresek')) {
+              risolDamaged += item.quantity || 0
+            }
           })
         }
       })
@@ -199,6 +206,10 @@ export async function GET(request: NextRequest) {
       
       // Calculate closing stock
       const closingStock = Math.max(0, openingStock + purchasedItems - itemsSold - itemsDamaged)
+      
+      // Calculate waste rate for risol
+      const totalRisolHandled = risolSold + risolDamaged
+      const risolWasteRate = totalRisolHandled > 0 ? (risolDamaged / totalRisolHandled) * 100 : 0
 
       dailyData.push({
         date: dateStr,
@@ -209,6 +220,8 @@ export async function GET(request: NextRequest) {
         transactions: dailyTransactionCount,
         items: itemsSold,
         risolSold, // Add risol sales count
+        risolDamaged, // Add risol damage count
+        risolWasteRate, // Add waste rate percentage
         // Cash data
         openingCash,
         closingCash,
@@ -251,6 +264,10 @@ export async function GET(request: NextRequest) {
     })).sort((a, b) => b.quantity - a.quantity) // Sort by quantity descending
 
     // Calculate summary statistics
+    const totalRisolSold = dailyData.reduce((sum, day) => sum + day.risolSold, 0)
+    const totalRisolDamaged = dailyData.reduce((sum, day) => sum + day.risolDamaged, 0)
+    const totalRisolHandled = totalRisolSold + totalRisolDamaged
+    
     const summary = {
       totalSales: dailyData.reduce((sum, day) => sum + day.sales, 0),
       totalTransactions: dailyData.reduce((sum, day) => sum + day.transactions, 0),
@@ -260,6 +277,10 @@ export async function GET(request: NextRequest) {
       totalStock: dailyData[dailyData.length - 1]?.closingStock || 0,
       totalItemsSold: dailyData.reduce((sum, day) => sum + day.items, 0),
       totalPurchases: dailyData.reduce((sum, day) => sum + day.purchases, 0),
+      // Risol waste metrics
+      averageRisolWasteRate: totalRisolHandled > 0 ? (totalRisolDamaged / totalRisolHandled) * 100 : 0,
+      totalRisolDamaged,
+      totalRisolSold,
     }
 
     return NextResponse.json({
