@@ -37,7 +37,7 @@ export function RisolSalesPieChart({ period }: RisolSalesPieChartProps) {
   const fetchRisolSalesData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/weekly?period=${period}`, {
+      const response = await fetch(`/api/reports/monthly?period=${period}`, {
         credentials: 'include'
       });
 

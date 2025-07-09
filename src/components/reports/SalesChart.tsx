@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,13 +13,14 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils/format";
 
-interface WeeklySalesChartProps {
+interface SalesChartProps {
   period: string;
 }
 
-export function WeeklySalesChart({ period }: WeeklySalesChartProps) {
+export function SalesChart({ period }: SalesChartProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [averageSales, setAverageSales] = useState(0);
 
   useEffect(() => {
     fetchSalesData();
@@ -28,7 +29,7 @@ export function WeeklySalesChart({ period }: WeeklySalesChartProps) {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/weekly?period=${period}`, {
+      const response = await fetch(`/api/reports/monthly?period=${period}`, {
         credentials: "include",
       });
 
@@ -39,16 +40,35 @@ export function WeeklySalesChart({ period }: WeeklySalesChartProps) {
       const result = await response.json();
 
       if (result.success) {
-        // Transform the data for the chart
-        const chartData = result.dailyData.map((day: any) => ({
+        // Calculate moving average (7-day window, ignoring 0 values)
+        const calculateMovingAverage = (data: any[], index: number, window: number = 7) => {
+          const start = Math.max(0, index - window + 1);
+          const end = index + 1;
+          const windowData = data.slice(start, end).filter((d: any) => d.sales > 0);
+          
+          if (windowData.length === 0) return 0;
+          
+          const sum = windowData.reduce((acc: number, d: any) => acc + d.sales, 0);
+          return sum / windowData.length;
+        };
+        
+        // Transform the data for the chart with moving average
+        const chartData = result.dailyData.map((day: any, index: number) => ({
           day: day.day,
           date: day.displayDate,
-          sales: day.sales,
+          sales: day.sales, 
+          movingAverage: calculateMovingAverage(result.dailyData, index),
           transactions: day.transactions,
           items: day.items,
         }));
 
         setData(chartData);
+        
+        // Calculate overall average for reference
+        const daysWithSales = result.dailyData.filter((day: any) => day.sales > 0);
+        const totalSales = daysWithSales.reduce((sum: number, day: any) => sum + day.sales, 0);
+        const avgSales = daysWithSales.length > 0 ? totalSales / daysWithSales.length : 0;
+        setAverageSales(avgSales);
       } else {
         throw new Error(result.error || "Failed to fetch sales data");
       }
@@ -69,6 +89,9 @@ export function WeeklySalesChart({ period }: WeeklySalesChartProps) {
           <p className="font-medium">{`${label}, ${data.date}`}</p>
           <p className="text-green-600">
             Penjualan: {formatCurrency(data.sales)}
+          </p>
+          <p className="text-orange-600">
+            Rata-rata Bergerak: {formatCurrency(data.movingAverage)}
           </p>
           <p className="text-blue-600">Transaksi: {data.transactions} kali</p>
           <p className="text-purple-600">Item: {data.items} pcs</p>
@@ -92,25 +115,43 @@ export function WeeklySalesChart({ period }: WeeklySalesChartProps) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
+        <LineChart
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+          <XAxis 
+            dataKey="date" 
+            tick={{ fontSize: 11 }} 
+            angle={-45}
+            textAnchor="end"
+            height={60}
+          />
           <YAxis
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => `${value / 1000}k`}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
-          <Bar
+          <Line
+            type="monotone"
             dataKey="sales"
-            fill="#16a34a"
+            stroke="#16a34a"
+            strokeWidth={3}
+            dot={{ fill: "#16a34a", r: 4 }}
+            activeDot={{ r: 6 }}
             name="Penjualan (Rp)"
-            radius={[4, 4, 0, 0]}
           />
-        </BarChart>
+          <Line
+            type="monotone"
+            dataKey="movingAverage"
+            stroke="#f97316"
+            strokeWidth={2.5}
+            dot={{ fill: "#f97316", r: 3 }}
+            activeDot={{ r: 5 }}
+            name="Rata-rata Bergerak 7 Hari (Rp)"
+          />
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

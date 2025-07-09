@@ -14,14 +14,14 @@ import {
   RefreshCw,
   PieChart
 } from "lucide-react";
-import { WeeklySalesChart } from "@/components/reports/WeeklySalesChart";
-import { WeeklyCashChart } from "@/components/reports/WeeklyCashChart";
-import { WeeklyStockChart } from "@/components/reports/WeeklyStockChart";
+import { SalesChart } from "@/components/reports/SalesChart";
+import { CashChart } from "@/components/reports/CashChart";
+import { StockChart } from "@/components/reports/StockChart";
 import { RisolSalesPieChart } from "@/components/reports/RisolSalesPieChart";
 import { formatCurrency } from "@/lib/utils/format";
 
 export default function ReportsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState("thisWeek");
+  const [selectedPeriod, setSelectedPeriod] = useState("last30Days");
   const [loading, setLoading] = useState(false);
   const [summaryData, setSummaryData] = useState({
     totalSales: 0,
@@ -38,7 +38,7 @@ export default function ReportsPage() {
   const fetchSummaryData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/weekly?period=${selectedPeriod}`, {
+      const response = await fetch(`/api/reports/monthly?period=${selectedPeriod}`, {
         credentials: 'include'
       });
       
@@ -104,8 +104,9 @@ export default function ReportsPage() {
                 <SelectValue placeholder="Pilih periode" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="thisWeek">Minggu Ini</SelectItem>
-                <SelectItem value="lastWeek">Minggu Lalu</SelectItem>
+                <SelectItem value="last30Days">30 Hari Terakhir</SelectItem>
+                <SelectItem value="last60Days">60 Hari Terakhir</SelectItem>
+                <SelectItem value="last90Days">90 Hari Terakhir</SelectItem>
               </SelectContent>
             </Select>
             
@@ -201,11 +202,11 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Penjualan Mingguan
+                Grafik Penjualan
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <WeeklySalesChart period={selectedPeriod} />
+              <SalesChart period={selectedPeriod} />
             </CardContent>
           </Card>
 
@@ -214,11 +215,11 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Aliran Kas Mingguan
+                Grafik Aliran Kas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <WeeklyCashChart period={selectedPeriod} />
+              <CashChart period={selectedPeriod} />
             </CardContent>
           </Card>
 
@@ -227,11 +228,11 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Pergerakan Stok Mingguan
+                Grafik Pergerakan Stok
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <WeeklyStockChart period={selectedPeriod} />
+              <StockChart period={selectedPeriod} />
             </CardContent>
           </Card>
 
