@@ -13,11 +13,11 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils/format";
 
-interface WeeklyCashChartProps {
+interface CashChartProps {
   period: string;
 }
 
-export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
+export function CashChart({ period }: CashChartProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +28,7 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
   const fetchCashData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/weekly?period=${period}`, {
+      const response = await fetch(`/api/reports/monthly?period=${period}`, {
         credentials: "include",
       });
 
@@ -110,7 +110,13 @@ export function WeeklyCashChart({ period }: WeeklyCashChartProps) {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+          <XAxis 
+            dataKey="date" 
+            tick={{ fontSize: 11 }} 
+            angle={-45}
+            textAnchor="end"
+            height={60}
+          />
           <YAxis
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => `${value / 1000}k`}

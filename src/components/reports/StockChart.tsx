@@ -14,11 +14,11 @@ import {
   Bar,
 } from "recharts";
 
-interface WeeklyStockChartProps {
+interface StockChartProps {
   period: string;
 }
 
-export function WeeklyStockChart({ period }: WeeklyStockChartProps) {
+export function StockChart({ period }: StockChartProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +29,7 @@ export function WeeklyStockChart({ period }: WeeklyStockChartProps) {
   const fetchStockData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/weekly?period=${period}`, {
+      const response = await fetch(`/api/reports/monthly?period=${period}`, {
         credentials: "include",
       });
 
@@ -103,7 +103,13 @@ export function WeeklyStockChart({ period }: WeeklyStockChartProps) {
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+            <XAxis 
+              dataKey="date" 
+              tick={{ fontSize: 11 }} 
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip
               formatter={(value, name) => [

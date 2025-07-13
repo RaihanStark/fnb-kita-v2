@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') || 'thisWeek'
+    const period = searchParams.get('period') || 'last30Days'
     
     // Calculate date range based on period
     const today = new Date()
@@ -21,22 +21,28 @@ export async function GET(request: NextRequest) {
     let endDate = new Date()
     
     switch (period) {
-      case 'thisWeek':
-        // Start from Monday of this week
-        const dayOfWeek = today.getDay()
-        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-        startDate.setDate(today.getDate() - daysToMonday)
+      case 'last30Days':
+        // Start from 30 days ago
+        startDate.setDate(today.getDate() - 29) // -29 to include today as the 30th day
         startDate.setHours(0, 0, 0, 0)
-        // Include today + next day to ensure we get all data for the week
+        // End date is tomorrow to include today's data
         endDate.setDate(today.getDate() + 1)
         endDate.setHours(0, 0, 0, 0)
         break
-      case 'lastWeek':
-        const lastWeekDayOfWeek = today.getDay()
-        const daysToLastMonday = lastWeekDayOfWeek === 0 ? 13 : lastWeekDayOfWeek + 6
-        startDate.setDate(today.getDate() - daysToLastMonday)
+      case 'last60Days':
+        // Start from 60 days ago
+        startDate.setDate(today.getDate() - 59) // -59 to include today as the 60th day
         startDate.setHours(0, 0, 0, 0)
-        endDate.setDate(startDate.getDate() + 7)
+        // End date is tomorrow to include today's data
+        endDate.setDate(today.getDate() + 1)
+        endDate.setHours(0, 0, 0, 0)
+        break
+      case 'last90Days':
+        // Start from 90 days ago
+        startDate.setDate(today.getDate() - 89) // -89 to include today as the 90th day
+        startDate.setHours(0, 0, 0, 0)
+        // End date is tomorrow to include today's data
+        endDate.setDate(today.getDate() + 1)
         endDate.setHours(0, 0, 0, 0)
         break
     }
@@ -103,8 +109,11 @@ export async function GET(request: NextRequest) {
     const dailyData = []
     const currentDate = new Date(startDate)
 
-    // Include today's date (loop for 8 days to ensure we get everything including today)
-    for (let i = 0; i < 8; i++) {
+    // Calculate the number of days to loop through
+    const daysDifference = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Loop through all days in the period
+    for (let i = 0; i < daysDifference; i++) {
       const dateStr = formatDate(currentDate)
       const dayName = currentDate.toLocaleDateString('id-ID', { weekday: 'short' })
       const displayDate = currentDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
@@ -119,22 +128,35 @@ export async function GET(request: NextRequest) {
       const dailySales = salesTransactions.reduce((sum, t) => sum + (Number(t.totalAmount) || 0), 0)
       const dailyTransactionCount = salesTransactions.length
       
-      // Calculate items sold
+      // Calculate items sold and risol sales
       let itemsSold = 0
       let itemsDamaged = 0
+      let risolSold = 0
       
       salesTransactions.forEach(trans => {
         if (trans.items && Array.isArray(trans.items)) {
           trans.items.forEach((item: any) => {
             itemsSold += item.quantity || 0
+            // Count risol sales (excluding kresek and similar items)
+            if (item.name && item.name.toLowerCase().includes('risol') && 
+                !item.name.toLowerCase().includes('kresek')) {
+              risolSold += item.quantity || 0
+            }
           })
         }
       })
+      
+      let risolDamaged = 0
       
       damagedTransactions.forEach(trans => {
         if (trans.items && Array.isArray(trans.items)) {
           trans.items.forEach((item: any) => {
             itemsDamaged += item.quantity || 0
+            // Count damaged risol (excluding kresek and similar items)
+            if (item.name && item.name.toLowerCase().includes('risol') && 
+                !item.name.toLowerCase().includes('kresek')) {
+              risolDamaged += item.quantity || 0
+            }
           })
         }
       })
@@ -184,6 +206,10 @@ export async function GET(request: NextRequest) {
       
       // Calculate closing stock
       const closingStock = Math.max(0, openingStock + purchasedItems - itemsSold - itemsDamaged)
+      
+      // Calculate waste rate for risol
+      const totalRisolHandled = risolSold + risolDamaged
+      const risolWasteRate = totalRisolHandled > 0 ? (risolDamaged / totalRisolHandled) * 100 : 0
 
       dailyData.push({
         date: dateStr,
@@ -193,6 +219,9 @@ export async function GET(request: NextRequest) {
         sales: dailySales,
         transactions: dailyTransactionCount,
         items: itemsSold,
+        risolSold, // Add risol sales count
+        risolDamaged, // Add risol damage count
+        risolWasteRate, // Add waste rate percentage
         // Cash data
         openingCash,
         closingCash,
@@ -235,6 +264,10 @@ export async function GET(request: NextRequest) {
     })).sort((a, b) => b.quantity - a.quantity) // Sort by quantity descending
 
     // Calculate summary statistics
+    const totalRisolSold = dailyData.reduce((sum, day) => sum + day.risolSold, 0)
+    const totalRisolDamaged = dailyData.reduce((sum, day) => sum + day.risolDamaged, 0)
+    const totalRisolHandled = totalRisolSold + totalRisolDamaged
+    
     const summary = {
       totalSales: dailyData.reduce((sum, day) => sum + day.sales, 0),
       totalTransactions: dailyData.reduce((sum, day) => sum + day.transactions, 0),
@@ -244,6 +277,10 @@ export async function GET(request: NextRequest) {
       totalStock: dailyData[dailyData.length - 1]?.closingStock || 0,
       totalItemsSold: dailyData.reduce((sum, day) => sum + day.items, 0),
       totalPurchases: dailyData.reduce((sum, day) => sum + day.purchases, 0),
+      // Risol waste metrics
+      averageRisolWasteRate: totalRisolHandled > 0 ? (totalRisolDamaged / totalRisolHandled) * 100 : 0,
+      totalRisolDamaged,
+      totalRisolSold,
     }
 
     return NextResponse.json({
@@ -256,7 +293,7 @@ export async function GET(request: NextRequest) {
       risolSales
     })
   } catch (error) {
-    console.error('Error fetching weekly reports:', error)
+    console.error('Error fetching reports:', error)
     return NextResponse.json({ error: 'Failed to fetch reports' }, { status: 500 })
   }
 }
