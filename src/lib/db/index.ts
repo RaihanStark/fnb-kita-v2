@@ -20,8 +20,14 @@ export function getDb() {
   return dbInstance;
 }
 
-// Export db getter (for backward compatibility)
-export const db = getDb();
+// Lazy proxy for db to prevent Next.js build-time failure when DATABASE_URL is not provided
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(target, prop) {
+    const instance = getDb();
+    const value = (instance as any)[prop];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  }
+});
 
 // Export all schema for easy access
 export * from './schema';
