@@ -1,6 +1,6 @@
-# FnB Kita (v2)
+# POSKita
 
-A modern, full-stack Food & Beverage management system and Point of Sale (POS) designed for restaurants, cafes, and food stalls.
+A modern Point of Sale (POS) and operations management system tailored for micro, small, and medium F&B businesses (UMKM kuliner, kedai kopi, food stalls, and home sellers).
 
 Built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **PostgreSQL (Drizzle ORM)**.
 
@@ -16,7 +16,7 @@ Built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **
 
 ## Features
 
-- **Store Shift Procedures**:
+- **Shift Procedures (Buka/Tutup Toko)**:
   - **Opening Checklist**: Cash float counting, equipment checks, and operational readiness.
   - **Closing & Reconciliation**: End-of-day register balancing, cash count breakdown, waste recording, and security checklists.
 - **Point of Sale (POS)**: Fast order taking, itemized carts, dynamic totals, and multi-channel payment recording.
@@ -41,8 +41,8 @@ Built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **
 ### 1. Clone & Install Dependencies
 
 ```bash
-git clone https://github.com/RaihanStark/fnb-kita-v2.git
-cd fnb-kita-v2
+git clone https://github.com/RaihanStark/poskita.git
+cd poskita
 npm install
 ```
 
@@ -55,7 +55,7 @@ cp .env.example .env.local
 ```
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/fnbkita
+DATABASE_URL=postgresql://user:password@localhost:5432/poskita
 JWT_SECRET=your_jwt_secret_here
 JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
 ```
